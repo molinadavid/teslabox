@@ -46,7 +46,6 @@ For paid (priority) support please contact teslabox@payymail.com
    - Click "Next: Review"
    - Click "Create User"
    - Copy both the Access key ID and Secret access key
-4. Note, depending on your S3 usage [you will be charged](https://aws.amazon.com/s3/pricing/) for each clip stored and/or downloaded
 
 ### Ngrok (required for remote access)
 1. Sign into your Ngrok account
@@ -124,7 +123,6 @@ For paid (priority) support please contact teslabox@payymail.com
 
    touch /etc/modprobe.d/g_mass_storage.conf
    echo "options g_mass_storage file=/usb.bin removable=1 ro=0 stall=0 iSerialNumber=123456" >> /etc/modprobe.d/g_mass_storage.conf
-   mkdir -p /mnt/usb/TeslaCam
    ```
    * 12000000 is 120GB (~93%) of 128GB card (we want around 8GB of unallocated space)
    * Decrease 12000000 to 5600000 for 64GB card
@@ -227,7 +225,10 @@ For paid (priority) support please contact teslabox@payymail.com
 ## Setup
 
 ### Initial setup
-Connect TeslaBox to your home network via ethernet cable or home WiFi, browse your device IP address and edit these settings:
+1. Connect TeslaBox to your computer via USB cable and wait for it to appear as drive
+2. Create an empty ```TeslaCam``` under the root folder of the drive
+3. Make sure TeslaBox to your home network via ethernet cable or home WiFi
+4. Browse your device IP address and edit these settings:
 
 - Car name (appears next to each notification)
 - Log level (log verbosity. recommended: Debug)
@@ -265,6 +266,9 @@ The clip would start 10 seconds prior to the event ("red dot") and up to X-10 se
 
 If the event is sensed on the rear, then the back camera is enlarged, otherwise - front. The side cameras are always smaller.
 
+### Raw footage
+Dashcam and sentry videos are always available through the Dashcam app on your Tesla, or by connecting TeslaBox using USB cable to your computer.
+
 ### Stream
 This is similar to Tesla's Sentry Mode Live Camera feature but available on any browser. To some extent, you can use it as a public security camera.
 
@@ -274,10 +278,22 @@ If sentry mode is disabled or car is asleep, you might not see any new streams.
 
 This feature is automatically disabled when the car goes to sleep or TeslaBox restarts.
 
+## Important considerations
+TeslaBox neither use any Tesla API nor requires any Tesla token. It only replaces your Tesla's standard USB or SSD drive with
+Micro-SD card on a Raspberry Pi.
+
+You can delete individual (or all) videos through the Dashcam app on your Tesla, but do **not** format the drive. It will render the TeslaBox useless.
+
+There might be risks involved with running TeslaBox under certain tempature conditions, TeslaBox not recording dashcam or sentry videos and/or TeslaBox not uploading, delivering or notifying you of such events. Always make sure Tesla recognizes a valid USB storage, and that videos are saved and viewable through the built-in Dashcam app.
+
+There might be AWS costs associated with archiving (both storing and viewing clips). See [S3 pricing](https://aws.amazon.com/s3/pricing/).
+
+There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If you are worried you can have TeslaBox connect only to your home or public WiFi.
+
 ## Support
 TeslaBox is not affiliated or supported by Tesla. There is no official support whatsoever. As per the license this is provided As-Is. **Use at your own risk!**
 
 Please open an issue if things seems out of order and I'll attend them as time allows.
 
 ## Credits
-TeslaBox wouldn't become available without the help of [teslausb](https://github.com/marcone/teslausb), [tesla_dashcam](https://github.com/ehendrix23/tesla_dashcam) and good friends at [Tesla Fans Israel Telegram Group](https://t.me/TeslaFansIL).
+TeslaBox wouldn't become available without the help of [teslausb](https://github.com/marcone/teslausb), [tesla_dashcam](https://github.com/ehendrix23/tesla_dashcam) and friends at [TeslaFansIL](https://t.me/TeslaFansIL).
