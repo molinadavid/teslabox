@@ -37,7 +37,7 @@ exports.start = (cb) => {
 
       const carName = config.get('carName')
       const archiveQuality = config.get('archiveQuality').toUpperCase()
-      const archiveCompression = config.get('archiveCompression').toUpperCase()
+      const archiveCompression = config.get('archiveCompression')
       const archiveSeconds = Number(config.get('archiveSeconds'))
       const telegramRecipients = _.split(config.get('telegramRecipients'), ',')
 
