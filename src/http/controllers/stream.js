@@ -7,10 +7,10 @@ module.exports = (req, res, next) => {
   const streams = stream.list()
 
   const locals = {
-    front: +streams.front || false,
-    back: +streams.back || false,
-    left: +streams.left || false,
-    right: +streams.right || false
+    front: _.get(streams, 'front.created', false),
+    back: _.get(streams, 'back.created', false),
+    left: _.get(streams, 'left.created', false),
+    right: _.get(streams, 'right.created', false)
   }
 
   if (typeof req.query.json !== 'undefined') {

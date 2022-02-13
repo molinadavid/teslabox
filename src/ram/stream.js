@@ -36,7 +36,7 @@ exports.start = (cb) => {
             } else {
               streams[angle] = {
                 ctime,
-                created: new Date()
+                created: +new Date()
               }
 
               log.debug(`streamed ${file}`)
