@@ -26,7 +26,7 @@
         <tr>
           <th scope="row">{{created}}</th>
           <td>{{processed}}</td>
-          <td><a href="https://maps.google.com/?q={{lat}},{{lon}}" target="_blank"><i class="bi-map-fill"></i></a> <a href="https://maps.google.com/?q={{lat}},{{lon}}" target="_blank">{{lat}}, {{lon}}</a></td>
+          <td><a href="https://www.google.com/maps?q={{lat}},{{lon}}" target="_blank"><i class="bi-map-fill"></i></a> <a href="https://www.google.com/maps?q={{lat}},{{lon}}" target="_blank">{{lat}}, {{lon}}</a></td>
           <td>
             {{#url}}<a href="{{url}}" target="_blank"><i class="bi-camera-video-fill"></i></a> <a href="{{url}}" target="_blank">{{type}}</a>{{/url}}
             {{^url}}<i class="bi-camera-video-fill"></i> {{type}}{{/url}}

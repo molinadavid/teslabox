@@ -115,7 +115,7 @@ exports.start = (cb) => {
                   })
                 },
                 (cb) => {
-                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.timestamp)}${url ? ` <${url}>\n\n` : ''} <https://maps.google.com/?q=${event.est_lat},${event.est_lon}>`
+                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.timestamp)}${url ? ` <${url}>\n\n` : ''} <https://www.google.com/maps?q=${event.est_lat},${event.est_lon}>`
 
                   async.parallel([
                     (cb) => {

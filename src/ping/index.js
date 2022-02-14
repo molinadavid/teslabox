@@ -9,6 +9,8 @@ const host = '1.1.1.1'
 let isAlive
 
 exports.start = (cb) => {
+  cb = cb || function () {}
+
   async.forever((next) => {
     ping.sys.probe(host, (result) => {
       if (result) {

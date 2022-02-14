@@ -5,6 +5,7 @@ let db
 
 exports.start = (cb) => {
   cb = cb || function () {}
+
   db = new JSONdb(path.join(__dirname, '../../config.json'))
 
   // for security purposes, disable these features on every run
