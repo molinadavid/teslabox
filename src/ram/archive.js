@@ -79,7 +79,7 @@ exports.start = (cb) => {
 
             fs.stat(outputFile, (err, result) => {
               if (err || !result) {
-                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${ramDir}/temp --rear ${event.camera === 'rear' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-10 --sentry_end_offset=${archiveSeconds - 10} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox$ ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${outputFile}`, cb)
+                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${ramDir}/temp --rear ${event.camera === 'rear' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-10 --sentry_end_offset=${archiveSeconds - 10} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${outputFile}`, cb)
               } else {
                 cb()
               }
