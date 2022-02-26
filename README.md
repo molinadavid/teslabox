@@ -64,6 +64,7 @@ For paid (priority) support please contact teslabox@payymail.com
 1. Download and run [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Write the 32 or 64-bit *Lite* version to your Micro-SD card
 3. Re-insert the Micro-SD card and perform the following:
+   
    3.1. Add this to the bottom of **config.txt**:
    ```
    dtoverlay=dwc2
