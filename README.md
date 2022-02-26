@@ -156,7 +156,7 @@ For paid (priority) support please contact teslabox@payymail.com
    cd /root
    mkdir -p /root/teslabox
    curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
-   unzip main.zip
+   unzip -o main.zip
    cp -r teslabox-main/* teslabox
    rm -rf teslabox-main
    cd teslabox
