@@ -33,7 +33,7 @@ For paid (priority) support please contact teslabox@payymail.com
    - Click "Next: Permissions"
    - Under "Attach existing policies directly" click "Create Policy"
    - Service: S3
-   - Actions: PutObject
+   - Actions: GetObject and PutObject
    - Resource: Add ARN to restrict access
    - Enter your Bucket name from 2.1. and Object name any
    - Click "Add"
@@ -64,7 +64,7 @@ For paid (priority) support please contact teslabox@payymail.com
 1. Download and run [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Write the 32 or 64-bit *Lite* version to your Micro-SD card
 3. Re-insert the Micro-SD card and perform the following:
-   
+
    3.1. Add this to the bottom of **config.txt**:
    ```
    dtoverlay=dwc2
@@ -231,7 +231,7 @@ For paid (priority) support please contact teslabox@payymail.com
 ### Initial setup
 1. Connect TeslaBox to your computer via USB cable and wait for it to appear as drive
 2. Create an empty ```TeslaCam``` under the root folder of the drive
-3. Make sure TeslaBox to your home network via ethernet cable or home WiFi
+3. Make sure TeslaBox is connected to your home network via ethernet cable or home WiFi
 4. Browse your device IP address and edit these settings:
 
 - Car name (appears next to each notification)
@@ -293,6 +293,28 @@ There might be risks involved with running TeslaBox under certain tempature cond
 There might be AWS costs associated with archiving (both storing and viewing clips). See [S3 pricing](https://aws.amazon.com/s3/pricing/).
 
 There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If you are worried you can have TeslaBox connect only to your home or public WiFi.
+
+## Upgrade
+
+1. SSH to your Raspberry Pi
+2. Perform the following as sudo using ```sudo -i```
+
+   2.1. Download and re-install TeslaBox and packages:
+   ```
+   cd /root
+   curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
+   unzip -o main.zip
+   cp -r teslabox-main/* teslabox
+   rm -rf teslabox-main
+   cd teslabox
+   export NPM_CONFIG_UNSAFE_PERM=true
+   npm install
+   ```
+
+   2.2. Restart TeslaBox service:
+   ```
+   systemctl start teslabox
+   ```
 
 ## Support
 TeslaBox is not affiliated or supported by Tesla. There is no official support whatsoever. As per the license this is provided As-Is. **Use at your own risk!**

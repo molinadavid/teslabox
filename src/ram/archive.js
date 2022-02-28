@@ -54,17 +54,14 @@ exports.start = (cb) => {
               if (!err) {
                 try {
                   event = JSON.parse(result)
-                  switch (event.reason) {
-                    case 'user_interaction_voice':
-                    case 'user_interaction_honk':
-                    case 'user_interaction_dashcam_panel_save':
-                    case 'user_interaction_dashcam_icon_tapped':
-                      event.type = 'dashcam'
-                      break
 
-                    default:
-                      event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
-                      event.type = 'sentry'
+                  if (row.includes('SentryClips')) {
+                    event.type = 'sentry'
+                    event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
+                  } else if (row.includes('TrackClips')) {
+                    event.type = 'track'
+                  } else {
+                    event.type = 'dashcam'
                   }
                 } catch (e) {
                   err = e

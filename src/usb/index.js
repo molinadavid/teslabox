@@ -91,6 +91,10 @@ exports.start = (cb) => {
                         const file = _.last(parts)
                         fs.copyFile(clip, `${copyFolder}/${file}`, cb)
                       }, cb)
+                    },
+                    (cb) => {
+                      log.debug(`archiving ${rootFolder}/${folder}`)
+                      cb()
                     }
                   ], cb)
                 })
