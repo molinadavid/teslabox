@@ -3,6 +3,8 @@ Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
 Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events (along with a copy of each clip) via Telegram and allows remote streaming while parked or driving!
 
+Can also turn your Tesla to a surveillance/security camera, granting access to anyone with a browser.
+
 ![](https://cdn.teslarpi.com/assets/img/teslabox.gif)
 
 ## Prerequisites
