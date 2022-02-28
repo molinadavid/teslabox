@@ -315,7 +315,7 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
 
    2.2. Restart TeslaBox service:
    ```
-   systemctl start teslabox
+   systemctl restart teslabox
    ```
 
 ## Support
