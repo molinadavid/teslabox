@@ -57,7 +57,7 @@ module.exports = (req, res, next) => {
     stream: !!config.get('stream'),
     ssh: !!config.get('ssh'),
     public: !!config.get('public'),
-    publicHost: publicHost ? `https://${publicHost}${ngrokRegion && ngrokRegion !== 'us' ? `.${ngrokRegion}` : ''}.ngrok.io` : false,
+    publicHost: publicHost ? publicHost.includes('.') ? `https://${publicHost}` : `https://${publicHost}${ngrokRegion && ngrokRegion !== 'us' ? `.${ngrokRegion}` : ''}.ngrok.io` : false,
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent')

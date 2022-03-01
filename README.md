@@ -52,7 +52,7 @@ For paid (priority) support please contact teslabox@payymail.com
 ### Ngrok (required for remote access)
 1. Sign into your Ngrok account
 2. Retrieve your secret token under *Getting Started > Your Authtoken*
-3. Note, going with a paid plan would simplify remote access with custom subdomains
+3. On paid plans, create your custom domains (you.example.com) or subdomains (you.ngrok.io)
 
 ### Telegram (required for notifications)
 1. Sign into your Telegram account
@@ -205,7 +205,7 @@ For paid (priority) support please contact teslabox@payymail.com
    Environment="PUBLIC_USER="
    Environment="PUBLIC_PASSWORD="
 
-   # For paid Ngrok accounts, enter your custom admin and/or public subdomains
+   # For paid Ngrok accounts, enter your custom domains ("you.example.com") or subdomains ("you" for you.ngrok.io)
    Environment="ADMIN_HOST="
    Environment="PUBLIC_HOST="
 

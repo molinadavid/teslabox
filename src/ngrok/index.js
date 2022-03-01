@@ -91,8 +91,11 @@ exports.start = (cb) => {
             addr: 80,
             region,
             authtoken,
-            subdomain: adminHost || undefined,
             httpauth: `${adminUser}:${adminPassword}`
+          }
+
+          if (adminHost) {
+            params[adminHost.includes('.') ? 'hostname' : 'subdomain'] = adminHost
           }
 
           p2c(ngrok.connect(params))((err, host) => {
@@ -133,8 +136,11 @@ exports.start = (cb) => {
             addr: 80,
             region,
             authtoken,
-            subdomain: publicHost || undefined,
             httpauth: `${publicUser}:${publicPassword}`
+          }
+
+          if (publicHost) {
+            params[publicHost.includes('.') ? 'hostname' : 'subdomain'] = publicHost
           }
 
           p2c(ngrok.connect(params))((err, host) => {
