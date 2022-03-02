@@ -1,5 +1,6 @@
 const config = require('../../config')
 const controllers = require('./')
+const package = require('../../../package.json')
 
 const _ = require('lodash')
 
@@ -60,7 +61,8 @@ module.exports = (req, res, next) => {
     publicHost: publicHost ? publicHost.includes('.') ? `https://${publicHost}` : `https://${publicHost}${ngrokRegion && ngrokRegion !== 'us' ? `.${ngrokRegion}` : ''}.ngrok.io` : false,
     time: controllers.formatDate(),
     userIp: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
+    version: package.version
   }
 
   res.render('home', locals, (err, result) => {

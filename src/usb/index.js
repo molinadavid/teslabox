@@ -110,13 +110,12 @@ exports.start = (cb) => {
     ], (err) => {
       if (err) {
         log.warn(`usb failed: ${err}`)
-      } else {
+      } else if (!isReady) {
         isReady = true
+        cb()
       }
 
       setTimeout(next, interval)
     })
   })
-
-  cb()
 }

@@ -169,9 +169,10 @@ For paid (priority) support please contact teslabox@payymail.com
 
    7.6. Add this just before "exit 0" in **/etc/rc.local**:
    ```
-   /usr/sbin/modprobe g_mass_storage & >> /var/log/teslabox.log 2>&1
+   /usr/sbin/modprobe g_mass_storage >> /var/log/teslabox.log 2>&1
    /usr/sbin/fsck -a -y /mnt/usb >> /var/log/teslabox.log 2>&1
-   mount /mnt/usb & >> /var/log/teslabox.log 2>&1
+   mount /mnt/usb >> /var/log/teslabox.log 2>&1
+   rm /mnt/usb/FSCK* >> /var/log/teslabox.log 2>&1
    ```
 
    7.7. Create and edit service variables in **/lib/systemd/system/teslabox.service**:
