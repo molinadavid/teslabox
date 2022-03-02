@@ -14,7 +14,7 @@ const { exec } = require('child_process')
 
 const interval = 10000
 const parallel = 1
-const expires = 30 * 86400
+const expires = 7 * 86400
 
 const ramDir = process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 const bucket = process.env.AWS_S3_BUCKET
