@@ -14,10 +14,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 const authtoken = process.env.NGROK_AUTH_TOKEN
 const region = process.env.NGROK_REGION
 const adminHost = process.env.ADMIN_HOST
-const adminUser = process.env.ADMIN_USER
 const adminPassword = process.env.ADMIN_PASSWORD
-const publicHost = process.env.PUBLIC_HOST
-const publicUser = process.env.PUBLIC_USER
 const publicPassword = process.env.PUBLIC_PASSWORD
 
 let hosts = {}
@@ -30,8 +27,8 @@ exports.start = (cb) => {
     return cb()
   }
 
-  if (!adminUser || !adminPassword) {
-    log.warn(`remote admin access is disabled because ADMIN_USER and/or ADMIN_PASSWORD is missing`)
+  if (!adminPassword) {
+    log.warn(`remote admin access is disabled because ADMIN_PASSWORD is missing`)
   }
 
   async.forever((next) => {
@@ -84,14 +81,13 @@ exports.start = (cb) => {
         }
       },
       (cb) => {
-        if (!hosts.admin && adminUser && adminPassword) {
+        if (!hosts.admin) {
           const params = {
             proto: 'http',
             bind_tls: true,
             addr: 80,
             region,
-            authtoken,
-            httpauth: `${adminUser}:${adminPassword}`
+            authtoken
           }
 
           if (adminHost) {
@@ -129,14 +125,13 @@ exports.start = (cb) => {
         }
       },
       (cb) => {
-        if (!hosts.public && isPublic && publicUser && publicPassword) {
+        if (!hosts.public && isPublic && publicPassword) {
           const params = {
             proto: 'http',
             bind_tls: true,
             addr: 80,
             region,
-            authtoken,
-            httpauth: `${publicUser}:${publicPassword}`
+            authtoken
           }
 
           if (publicHost) {
@@ -169,8 +164,4 @@ exports.start = (cb) => {
   })
 
   cb()
-}
-
-exports.isAdminHost = (host) => {
-  return !isProduction || !hosts.public || hosts.admin === `https://${host}`
 }
