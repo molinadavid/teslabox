@@ -1,5 +1,6 @@
 const log = require('../log')
 const config = require('../config')
+const controllers = require('../http/controllers')
 
 const _ = require('lodash')
 const async = require('async')
@@ -11,7 +12,6 @@ const { exec } = require('child_process')
 const interval = 3000
 
 const files = []
-let isReady
 
 exports.start = (cb) => {
   cb = cb || function () {}
@@ -23,6 +23,8 @@ exports.start = (cb) => {
   _.each(['stream/out', 'archive', 'temp'], (key) => {
     fs.mkdirSync(`${ramDir}/${key}`, { recursive: true })
   })
+
+  const startFolder = controllers.formatDate().replace(' ', '_').replace(/:/g, '-')
 
   async.forever((next) => {
     const isStream = config.get('stream')
@@ -44,24 +46,23 @@ exports.start = (cb) => {
           }
 
           async.eachSeries(result, (row, cb) => {
-            if (!isReady) {
-              files.push(row)
-              return cb()
-            }
+            const parts = row.split(/[\\/]/)
+            const file = _.last(parts)
+            const folder = _.nth(parts, -2)
+            const rootFolder = _.nth(parts, -3)
 
             if (files.includes(row)) {
               return cb()
             }
 
-            const parts = row.split(/[\\/]/)
-            const file = _.last(parts)
             const angle = file.includes('-front') ? 'front' : file.includes('-back') ? 'back' : file.includes('-left') ? 'left' : 'right'
 
             files.push(row)
 
-            if (isStream && row.includes('RecentClips') && file.endsWith('.mp4')) {
+            if (isStream && row.includes('RecentClips') && file.endsWith('.mp4') && file > startFolder) {
               fs.copyFile(row, `${ramDir}/stream/${angle}.mp4`, cb)
-            } else if (isArchive && file === 'event.json') {
+              log.debug(`streaming ${rootFolder}/${file}`)
+            } else if (isArchive && file === 'event.json' && folder > startFolder) {
               try {
                 fs.readFile(row, (err, result) => {
                   if (err) {
@@ -69,8 +70,7 @@ exports.start = (cb) => {
                   }
 
                   const event = JSON.parse(result)
-                  const folder = _.nth(parts, -2)
-                  const rootFolder = _.nth(parts, -3)
+                  event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
 
                   const clips = _.filter(files, (file) => {
                     return file.includes(`/${rootFolder}/${folder}/`) && file.endsWith('.mp4')
@@ -83,7 +83,7 @@ exports.start = (cb) => {
                       fs.mkdir(copyFolder, { recursive: true }, cb)
                     },
                     (cb) => {
-                      fs.copyFile(row, `${copyFolder}/${file}`, cb)
+                      fs.writeFile(`${copyFolder}/${file}`, JSON.stringify(event), cb)
                     },
                     (cb) => {
                       async.each(clips, (clip, cb) => {
@@ -110,12 +110,11 @@ exports.start = (cb) => {
     ], (err) => {
       if (err) {
         log.warn(`usb failed: ${err}`)
-      } else if (!isReady) {
-        isReady = true
-        cb()
       }
 
       setTimeout(next, interval)
     })
   })
+
+  cb()
 }
