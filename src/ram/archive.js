@@ -54,8 +54,7 @@ exports.start = (cb) => {
               if (!err) {
                 try {
                   event = JSON.parse(result)
-                  if (event.reason?.includes('sentry')) {
-                    event.type = 'sentry'
+                  if (event.type === 'sentry') {
                     event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
                   } else {
                     event.type = 'dashcam'
@@ -109,7 +108,7 @@ exports.start = (cb) => {
                   })
                 },
                 (cb) => {
-                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.timestamp)}${url ? ` <${url}>\n\n` : ''} <https://www.google.com/maps?q=${event.est_lat},${event.est_lon}>`
+                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.timestamp)}\n${url ? `[Download](${url}) | ` : ''}[Map](https://www.google.com/maps?q=${event.est_lat},${event.est_lon})`
 
                   async.parallel([
                     (cb) => {
