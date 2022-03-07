@@ -49,7 +49,8 @@ exports.sendVideo = (recipients, videoUrl, caption, isSilent, cb) => {
 
   const params = {
     caption,
-    disable_notification: !!isSilent
+    disable_notification: !!isSilent,
+    parse_mode: 'Markdown'
   }
 
   async.each(_.compact(recipients), (recipient, cb) => {
