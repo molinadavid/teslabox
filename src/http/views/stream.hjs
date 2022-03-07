@@ -10,6 +10,7 @@
   <body class="container mt-3">
     <a href="/" class="btn btn-secondary btn-sm">Back</a>
     <a href="/stream" class="btn btn-secondary btn-sm"><i class="bi-arrow-repeat"></i></a>
+    {{#isPublic}}<a href="/logout" class="btn btn-secondary btn-sm"><i class="bi-lock-fill"></i> Logout</a>{{/isPublic}}
 
     <table class="table table-striped">
       <thead>

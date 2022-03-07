@@ -8,9 +8,6 @@ const split = (str) => {
   return _.join(_.split(str, /[\r\n, ]+/), ',')
 }
 
-const ngrokRegion = process.env.NGROK_REGION
-const publicHost = process.env.PUBLIC_HOST
-
 module.exports = (req, res, next) => {
   if (req.method === 'POST') {
     config.set('carName', req.body.carName || '')
@@ -58,7 +55,6 @@ module.exports = (req, res, next) => {
     stream: !!config.get('stream'),
     ssh: !!config.get('ssh'),
     public: !!config.get('public'),
-    publicHost: publicHost ? publicHost.includes('.') ? `https://${publicHost}` : `https://${publicHost}${ngrokRegion && ngrokRegion !== 'us' ? `.${ngrokRegion}` : ''}.ngrok.io` : false,
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),

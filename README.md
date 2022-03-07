@@ -52,7 +52,7 @@ For paid (priority) support please contact teslabox@payymail.com
 ### Ngrok (required for remote access)
 1. Sign into your Ngrok account
 2. Retrieve your secret token under *Getting Started > Your Authtoken*
-3. On paid plans, create your custom domains (you.example.com) or subdomains (you.ngrok.io)
+3. On paid plans, create your custom domain (you.example.com) or subdomain (you.ngrok.io)
 
 ### Telegram (required for notifications)
 1. Sign into your Telegram account
@@ -137,9 +137,9 @@ For paid (priority) support please contact teslabox@payymail.com
    mkdir /mnt/ram
    echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=4G 0 0" >> /etc/fstab
    ```
-   * 4GB (~50%) if you have a Raspberry Pi board with 8GB of ram
-   * Decrease 4GB to 2GB if you have a board with 4GB of ram
-   * Decrease 4GB to 1GB if you have a board with 2GB of ram
+   * 4G (~50%) if you have a Raspberry Pi board with 8GB of ram
+   * Decrease 4G to 2G if you have a board with 4GB of ram
+   * Decrease 4G to 1G if you have a board with 2GB of ram
 
    7.3. Run **raspi-config** to set:
    * Variable fan speed (under "Performance") if you have a 3-wires fan
@@ -170,9 +170,6 @@ For paid (priority) support please contact teslabox@payymail.com
    7.6. Add this just before "exit 0" in **/etc/rc.local**:
    ```
    /usr/sbin/modprobe g_mass_storage >> /var/log/teslabox.log 2>&1
-   /usr/sbin/fsck -a -y /mnt/usb >> /var/log/teslabox.log 2>&1
-   mount /mnt/usb >> /var/log/teslabox.log 2>&1
-   rm /mnt/usb/FSCK* >> /var/log/teslabox.log 2>&1
    ```
 
    7.7. Create and edit service variables in **/lib/systemd/system/teslabox.service**:
@@ -198,17 +195,14 @@ For paid (priority) support please contact teslabox@payymail.com
    # Choose the region closest to you (us, eu, ap, au, sa, jp or in)
    Environment="NGROK_REGION=us"
 
-   # To enable remote admin access, enter username and password
-   Environment="ADMIN_USER="
+   # To enable remote admin access, enter password
    Environment="ADMIN_PASSWORD="
 
-   # To enable remote public (stream-only) access, enter username and password
-   Environment="PUBLIC_USER="
+   # To enable remote public (stream-only) access, enter password (this mustn't be the same as the admin password)
    Environment="PUBLIC_PASSWORD="
 
-   # For paid Ngrok accounts, enter your custom domains ("you.example.com") or subdomains ("you" for you.ngrok.io)
+   # For paid Ngrok accounts, enter your custom domain ("you.example.com") or subdomain ("you" for you.ngrok.io)
    Environment="ADMIN_HOST="
-   Environment="PUBLIC_HOST="
 
    Type=simple
    User=root
@@ -252,10 +246,10 @@ For paid (priority) support please contact teslabox@payymail.com
 TeslaBox works best with in-car WiFi. I personally use a 4G USB access point plugged into the main console with a short USB-A (female) to USB-C (male) cable. You can also use your mobile WiFi hotspot, or wait for the car to use your home WiFi as you park.
 
 ### Admin access
-This works if you entered admin user and password. Settings are explained above under Initial setup.
+This works if you entered admin password. Settings are explained above under Initial setup. To logout, click the "Logout" icon at the bottom.
 
 ### Public access
-This works if you entered public user and password. It will restrict public access to stream view only.
+This works if you entered public password. It will restrict public access to stream view only. To logout, click the "Logout" button at the top.
 
 ## Usage
 
@@ -269,7 +263,7 @@ The clip would start X seconds prior to the event ("red dot"). X is settable und
 ### Sentry
 If archive is enabled and sentry mode is activated, then similarly to dashcam every clip will be uploaded to S3 and/or sent to your Telegram.
 
-The clip would start 10 seconds prior to the event ("red dot") and up to X-10 seconds following the event. X is settable under *Admin > Archive seconds*.
+The clip would start X/2 seconds prior to the event ("red dot") and X/2 seconds following the event. X is settable under *Admin > Archive seconds*.
 
 If the event is sensed on the rear, then the back camera is enlarged, otherwise - front. The side cameras are always smaller.
 

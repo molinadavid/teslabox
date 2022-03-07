@@ -10,7 +10,8 @@ module.exports = (req, res, next) => {
     front: _.get(streams, 'front.created', false),
     back: _.get(streams, 'back.created', false),
     left: _.get(streams, 'left.created', false),
-    right: _.get(streams, 'right.created', false)
+    right: _.get(streams, 'right.created', false),
+    isPublic: res.locals.user === 'public'
   }
 
   if (typeof req.query.json !== 'undefined') {
