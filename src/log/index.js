@@ -21,7 +21,7 @@ const log = (level, message) => {
   }
 
   const output = ['warn', 'error'].includes(level) ? 'error' : 'log'
-  console[output](_.join(_.values(row), ' '))
+  console[output](`${level.toUpperCase()} ${message}`)
 
   logs.push(row)
   logs = logs.slice(-100)
