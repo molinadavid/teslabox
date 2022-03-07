@@ -1,7 +1,5 @@
 const config = require('../config')
 
-const _ = require('lodash')
-
 const levels = ['debug', 'info', 'warn', 'error']
 
 let logs = []

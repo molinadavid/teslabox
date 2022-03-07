@@ -1,7 +1,6 @@
 const controllers = require('./controllers')
 const routes = require('./routes')
 
-const _ = require('lodash')
 const compression = require('compression')
 const express = require('express')
 const favicon = require('serve-favicon')

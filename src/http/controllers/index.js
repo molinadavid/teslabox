@@ -1,3 +1,4 @@
+const config = require('../../config')
 const log = require('../../log')
 
 const _ = require('lodash')
@@ -30,7 +31,7 @@ exports.formatDate = (date) => {
 exports.auth = (req, res, next) => {
   const ua = req.get('User-Agent')
   const adminHash = adminPassword && ua ? crypto.createHash('sha256').update(`${ua}:${adminPassword}`).digest('base64') : false
-  const publicHash = publicPassword && ua ? crypto.createHash('sha256').update(`${ua}:${publicPassword}`).digest('base64') : false
+  const publicHash = config.get('public') && publicPassword && ua ? crypto.createHash('sha256').update(`${ua}:${publicPassword}`).digest('base64') : false
 
   if (req.cookies.hash === adminHash) {
     res.locals.user = 'admin'
