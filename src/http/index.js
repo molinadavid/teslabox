@@ -1,4 +1,3 @@
-const ngrok = require('../ngrok')
 const controllers = require('./controllers')
 const routes = require('./routes')
 
@@ -6,6 +5,7 @@ const _ = require('lodash')
 const compression = require('compression')
 const express = require('express')
 const favicon = require('serve-favicon')
+const cookieParser = require('cookie-parser')
 const http = require('http')
 const path = require('path')
 
@@ -42,20 +42,14 @@ exports.start = (cb) => {
   }
 
   app.use('/assets/', express.static(assetsDir, params))
+
+  app.use(cookieParser())
+  app.use(controllers.auth)
   app.use('/ram/', express.static(ramDir, params))
 
   app.set('views', path.join(__dirname, './views'))
   app.set('view engine', 'hjs')
   app.use(express.urlencoded({ extended: true }))
-
-  // public access is restricted to /stream
-  app.use((req, res, next) => {
-    if (!ngrok.isAdminHost(req.hostname) && !req.url.startsWith('/stream')) {
-      res.location('/stream')
-    }
-
-    next()
-  })
 
   app.use(routes)
   app.use(controllers.response)
