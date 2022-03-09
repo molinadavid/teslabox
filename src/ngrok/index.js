@@ -15,20 +15,15 @@ const authtoken = process.env.NGROK_AUTH_TOKEN
 const region = process.env.NGROK_REGION
 const adminHost = process.env.ADMIN_HOST
 const adminPassword = process.env.ADMIN_PASSWORD
-const publicPassword = process.env.PUBLIC_PASSWORD
 
 let hosts = {}
 
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  if (!authtoken || !region) {
-    log.warn(`remote access is disabled because NGROK_AUTH_TOKEN and/or NGROK_REGION is missing`)
+  if (!authtoken || !region || !adminPassword) {
+    log.warn(`ngrok access is disabled because NGROK_AUTH_TOKEN, NGROK_REGION or ADMIN_PASSWORD is missing`)
     return cb()
-  }
-
-  if (!adminPassword) {
-    log.warn(`remote admin access is disabled because ADMIN_PASSWORD is missing`)
   }
 
   async.forever((next) => {
@@ -37,7 +32,6 @@ exports.start = (cb) => {
     }
 
     const isSsh = config.get('ssh')
-    const isPublic = !!config.get('public')
     const telegramRecipients = _.split(config.get('telegramRecipients'), ',')
 
     async.series([
@@ -81,7 +75,7 @@ exports.start = (cb) => {
         }
       },
       (cb) => {
-        if (!hosts.admin) {
+        if (adminHost && !hosts.admin) {
           const params = {
             proto: 'http',
             bind_tls: true,
@@ -90,9 +84,7 @@ exports.start = (cb) => {
             authtoken
           }
 
-          if (adminHost) {
-            params[adminHost.includes('.') ? 'hostname' : 'subdomain'] = adminHost
-          }
+          params[adminHost.includes('.') ? 'hostname' : 'subdomain'] = adminHost
 
           p2c(ngrok.connect(params))((err, host) => {
             if (err) {
@@ -105,50 +97,6 @@ exports.start = (cb) => {
             log.debug(message)
 
             adminHost ? cb() : telegram.sendMessage(telegramRecipients, message, true, cb)
-          })
-        } else {
-          cb()
-        }
-      },
-      (cb) => {
-        if (hosts.public && !isPublic) {
-          p2c(ngrok.disconnect(hosts.public.host))((err, result) => {
-            if (!err) {
-              delete hosts.public
-              log.info('disconnected public')
-            }
-
-            cb(err)
-          })
-        } else {
-          cb()
-        }
-      },
-      (cb) => {
-        if (!hosts.public && isPublic && publicPassword) {
-          const params = {
-            proto: 'http',
-            bind_tls: true,
-            addr: 80,
-            region,
-            authtoken
-          }
-
-          if (publicHost) {
-            params[publicHost.includes('.') ? 'hostname' : 'subdomain'] = publicHost
-          }
-
-          p2c(ngrok.connect(params))((err, host) => {
-            if (err) {
-              return cb(err)
-            }
-
-            hosts.public = host
-
-            const message = `connected public: ${host}`
-            log.debug(message)
-
-            publicHost ? cb() : telegram.sendMessage(telegramRecipients, message, true, cb)
           })
         } else {
           cb()
