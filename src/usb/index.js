@@ -65,16 +65,31 @@ exports.start = (cb) => {
             } else if (isArchive && file === 'event.json' && folder > startFolder) {
               try {
                 fs.readFile(row, (err, result) => {
+                  let event
+
+                  try {
+                    event = JSON.parse(result)
+                  } catch (e) {
+                    err = e
+                  }
+
                   if (err) {
                     return cb(err)
                   }
 
-                  const event = JSON.parse(result)
                   event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
 
                   const clips = _.filter(files, (file) => {
                     return file.includes(`/${rootFolder}/${folder}/`) && file.endsWith('.mp4')
                   }).sort().reverse().slice(0, archiveClips)
+
+                  if (!clips.length) {
+                    return cb()
+                  }
+
+                  // event.timestamp is skewed. extract it from clip instead
+                  const arr = _.last(clips[0].split('/')).split(/[-_]/)
+                  event.adjustedTimestamp = `${arr[0]}-${arr[1]}-${arr[2]}T${arr[3]}:${arr[4]}:${arr[5]}`
 
                   const copyFolder = `${ramDir}/archive/${folder}`
 

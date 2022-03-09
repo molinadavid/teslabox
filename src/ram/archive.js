@@ -108,7 +108,7 @@ exports.start = (cb) => {
                   })
                 },
                 (cb) => {
-                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.timestamp)}\n${url ? `[Download](${url}) | ` : ''}[Map](https://www.google.com/maps?q=${event.est_lat},${event.est_lon})`
+                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.adjustedTimestamp)}\n${url ? `[Download](${url}) | ` : ''}[Map](https://www.google.com/maps?q=${event.est_lat},${event.est_lon})`
 
                   async.parallel([
                     (cb) => {
@@ -127,7 +127,7 @@ exports.start = (cb) => {
                   log.warn(`archive failed: ${err}`)
                 } else {
                   archives.push({
-                    created: new Date(event.timestamp),
+                    created: new Date(event.adjustedTimestamp),
                     lat: event.est_lat,
                     lon: event.est_lon,
                     type: event.type,
