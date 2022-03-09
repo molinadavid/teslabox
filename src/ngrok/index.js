@@ -75,7 +75,7 @@ exports.start = (cb) => {
         }
       },
       (cb) => {
-        if (adminHost && !hosts.admin) {
+        if (!hosts.admin) {
           const params = {
             proto: 'http',
             bind_tls: true,
