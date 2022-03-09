@@ -13,8 +13,14 @@ const timeout = 60
 
 let server
 
+const adminPassword = process.env.ADMIN_PASSWORD
+
 exports.start = (cb) => {
   cb = cb || function () {}
+
+  if (!adminPassword) {
+    return cb()
+  }
 
   const app = express()
 
@@ -29,6 +35,7 @@ exports.start = (cb) => {
   }))
 
   const isProduction = process.env.NODE_ENV === 'production'
+  const adminHost = process.env.ADMIN_HOST
   const assetsDir = path.join(__dirname, '../assets')
   const ramDir = isProduction ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 
@@ -42,7 +49,11 @@ exports.start = (cb) => {
 
   app.use('/assets/', express.static(assetsDir, params))
 
-  app.use(cookieParser())
+  app.use(cookieParser(null, {
+    httpOnly: true,
+    sameSite: true
+  }))
+
   app.use(controllers.auth)
   app.use('/ram/', express.static(ramDir, params))
 
