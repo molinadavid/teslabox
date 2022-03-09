@@ -65,10 +65,12 @@
         <input class="form-check-input" id="stream" name="stream" type="checkbox" role="switch"{{#stream}} checked{{/stream}}>
         <label class="form-check-label" for="stream"><a href="/stream">Stream</a></label>
       </div>
+      {{#isPublicPassword}}
       <div class="form-check form-switch">
         <input class="form-check-input" id="public" name="public" type="checkbox" role="switch"{{#public}} checked{{/public}}>
         <label class="form-check-label" for="public">Public</label>
       </div>
+      {{/isPublicPassword}}
       <div class="form-check form-switch">
         <input class="form-check-input" id="ssh" name="ssh" type="checkbox" role="switch"{{#ssh}} checked{{/ssh}}>
         <label class="form-check-label" for="ssh">SSH</label>

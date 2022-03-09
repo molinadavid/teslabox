@@ -4,6 +4,8 @@ const package = require('../../../package.json')
 
 const _ = require('lodash')
 
+const isPublicPassword = !!process.env.PUBLIC_PASSWORD
+
 const split = (str) => {
   return _.join(_.split(str, /[\r\n, ]+/), ',')
 }
@@ -55,6 +57,7 @@ module.exports = (req, res, next) => {
     stream: !!config.get('stream'),
     ssh: !!config.get('ssh'),
     public: !!config.get('public'),
+    isPublicPassword,
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),
