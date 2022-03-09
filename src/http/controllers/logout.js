@@ -1,11 +1,5 @@
 module.exports = (req, res, next) => {
-  const params = {
-    httpOnly: true,
-    secure: true,
-    sameSite: true
-  }
-
-  res.clearCookie('hash', params)
+  res.clearCookie('hash')
   res.location('/login')
   next()
 }
