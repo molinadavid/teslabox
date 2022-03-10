@@ -37,7 +37,7 @@ exports.start = (cb) => {
           return cb()
         }
 
-        exec(`umount ${usbDir} &> /dev/null && mount ${usbDir} &> /dev/null`, cb)
+        exec(`mount ${usbDir} &> /dev/null`, cb)
       },
       (cb) => {
         glob(`${usbDir}/**/+(event.json|*.mp4)`, (err, result) => {
@@ -121,7 +121,14 @@ exports.start = (cb) => {
             }
           }, cb)
         })
-      }
+      },
+      (cb) => {
+        if (!isProduction) {
+          return cb()
+        }
+
+        exec(`unmount ${usbDir} &> /dev/null`, cb)
+      },
     ], (err) => {
       if (err) {
         log.warn(`usb failed: ${err}`)
