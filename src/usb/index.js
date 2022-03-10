@@ -63,59 +63,55 @@ exports.start = (cb) => {
               fs.copyFile(row, `${ramDir}/stream/${angle}.mp4`, cb)
               log.debug(`streaming ${rootFolder}/${file}`)
             } else if (isArchive && file === 'event.json' && folder > startFolder) {
-              try {
-                fs.readFile(row, (err, result) => {
-                  let event
+              fs.readFile(row, (err, result) => {
+                if (err) {
+                  return cb(err)
+                }
 
-                  try {
-                    event = JSON.parse(result)
-                  } catch (e) {
-                    err = e
+                let event
+
+                try {
+                  event = JSON.parse(result)
+                } catch (err) {
+                  return cb(err)
+                }
+
+                event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
+
+                const clips = _.filter(files, (file) => {
+                  return file.includes(`/${rootFolder}/${folder}/`) && file.endsWith('.mp4')
+                }).sort().reverse().slice(0, archiveClips)
+
+                if (!clips.length) {
+                  return cb()
+                }
+
+                // event.timestamp is skewed. extract it from clip instead
+                const arr = _.last(clips[0].split('/')).split(/[-_]/)
+                event.adjustedTimestamp = `${arr[0]}-${arr[1]}-${arr[2]}T${arr[3]}:${arr[4]}:${arr[5]}`
+
+                const copyFolder = `${ramDir}/archive/${folder}`
+
+                async.series([
+                  (cb) => {
+                    fs.mkdir(copyFolder, { recursive: true }, cb)
+                  },
+                  (cb) => {
+                    fs.writeFile(`${copyFolder}/${file}`, JSON.stringify(event), cb)
+                  },
+                  (cb) => {
+                    async.each(clips, (clip, cb) => {
+                      const parts = clip.split(/[\\/]/)
+                      const file = _.last(parts)
+                      fs.copyFile(clip, `${copyFolder}/${file}`, cb)
+                    }, cb)
+                  },
+                  (cb) => {
+                    log.debug(`archiving ${rootFolder}/${folder}`)
+                    cb()
                   }
-
-                  if (err) {
-                    return cb(err)
-                  }
-
-                  event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
-
-                  const clips = _.filter(files, (file) => {
-                    return file.includes(`/${rootFolder}/${folder}/`) && file.endsWith('.mp4')
-                  }).sort().reverse().slice(0, archiveClips)
-
-                  if (!clips.length) {
-                    return cb()
-                  }
-
-                  // event.timestamp is skewed. extract it from clip instead
-                  const arr = _.last(clips[0].split('/')).split(/[-_]/)
-                  event.adjustedTimestamp = `${arr[0]}-${arr[1]}-${arr[2]}T${arr[3]}:${arr[4]}:${arr[5]}`
-
-                  const copyFolder = `${ramDir}/archive/${folder}`
-
-                  async.series([
-                    (cb) => {
-                      fs.mkdir(copyFolder, { recursive: true }, cb)
-                    },
-                    (cb) => {
-                      fs.writeFile(`${copyFolder}/${file}`, JSON.stringify(event), cb)
-                    },
-                    (cb) => {
-                      async.each(clips, (clip, cb) => {
-                        const parts = clip.split(/[\\/]/)
-                        const file = _.last(parts)
-                        fs.copyFile(clip, `${copyFolder}/${file}`, cb)
-                      }, cb)
-                    },
-                    (cb) => {
-                      log.debug(`archiving ${rootFolder}/${folder}`)
-                      cb()
-                    }
-                  ], cb)
-                })
-              } catch (err) {
-                cb(err)
-              }
+                ], cb)
+              })
             } else {
               cb()
             }
