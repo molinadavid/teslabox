@@ -1,7 +1,7 @@
 {
   "name": "teslabox",
   "description": "teslabox",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "scripts": {
     "start": "node src/index.js",
