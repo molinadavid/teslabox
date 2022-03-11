@@ -123,7 +123,7 @@ exports.start = (cb) => {
           return cb()
         }
 
-        exec(`unmount ${usbDir} &> /dev/null`, cb)
+        exec(`umount ${usbDir} &> /dev/null`, cb)
       },
     ], (err) => {
       if (err) {
