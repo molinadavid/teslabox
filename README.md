@@ -204,6 +204,9 @@ For paid (priority) support please contact teslabox@payymail.com
    # For paid Ngrok accounts, enter your custom domain ("you.example.com") or subdomain ("you" for you.ngrok.io)
    Environment="ADMIN_HOST="
 
+   # If your run other projects, like Tesla Android, change the port number to avoid conflict
+   Environment="ADMIN_PORT=80"
+
    Type=simple
    User=root
    ExecStart=/usr/bin/node /root/teslabox/src/index.js
@@ -283,7 +286,7 @@ This feature is automatically disabled when the car goes to sleep or TeslaBox re
 TeslaBox neither use any Tesla API nor requires any Tesla token. It only replaces your Tesla's standard USB or SSD drive with
 Micro-SD card on a Raspberry Pi.
 
-You can delete individual (or all) videos through the Dashcam app on your Tesla, but do **not** format the drive. It will render the TeslaBox useless.
+You can delete individual (or all) videos under "Safety" or through the Dashcam app on your Tesla, but do **not** format the drive. It will render the TeslaBox useless.
 
 There might be risks involved with running TeslaBox under certain tempature conditions, TeslaBox not recording dashcam or sentry videos and/or TeslaBox not uploading, delivering or notifying you of such events. Always make sure Tesla recognizes a valid USB storage, and that videos are saved and viewable through the built-in Dashcam app.
 

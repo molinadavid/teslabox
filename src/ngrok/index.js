@@ -15,6 +15,7 @@ const authtoken = process.env.NGROK_AUTH_TOKEN
 const region = process.env.NGROK_REGION
 const adminHost = process.env.ADMIN_HOST
 const adminPassword = process.env.ADMIN_PASSWORD
+const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT) : 80
 
 let hosts = {}
 
@@ -79,7 +80,7 @@ exports.start = (cb) => {
           const params = {
             proto: 'http',
             bind_tls: true,
-            addr: 80,
+            addr: adminPort,
             region,
             authtoken
           }

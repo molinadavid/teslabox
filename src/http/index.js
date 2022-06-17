@@ -8,11 +8,11 @@ const cookieParser = require('cookie-parser')
 const http = require('http')
 const path = require('path')
 
-const port = 80
 const timeout = 60
 
 let server
 
+const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT) : 80
 const adminPassword = process.env.ADMIN_PASSWORD
 
 exports.start = (cb) => {
@@ -68,7 +68,7 @@ exports.start = (cb) => {
   server = http.createServer(app)
   server.timeout = timeout
   server.keepAliveTimeout = timeout
-  server.listen(port, '0.0.0.0', cb)
+  server.listen(adminPort, '0.0.0.0', cb)
 }
 
 exports.end = (cb) => {
