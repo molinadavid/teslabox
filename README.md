@@ -8,7 +8,7 @@ Can also turn your Tesla to a surveillance/security camera, granting access to a
 ![](https://cdn.teslarpi.com/assets/img/teslabox.gif)
 
 ## Prerequisites
-- Raspberry Pi 4 with at least 4GB of ram with case and fan
+- Raspberry Pi 4 with at least 4GB of ram with case and fan (Argon cases are *not* recommended)
 - Micro-SD card with at least 64GB of storage and card reader
 - USB-A to USB-C or USB-C to USB-C (all males) cable
 - Some form of WiFi access (preferably in-car)
@@ -37,7 +37,7 @@ For paid (priority) support please contact teslabox@payymail.com
    - Service: S3
    - Actions: GetObject and PutObject
    - Resource: Add ARN to restrict access
-   - Enter your Bucket name from 2.1. and Object name any
+   - Enter your Bucket name from 2.1 and tick "any" on Object name
    - Click "Add"
    - Click "Next: Tags"
    - Click "Next: Review"
