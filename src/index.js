@@ -24,9 +24,9 @@ async.series([
   ram.start
 ], (err) => {
   if (err) {
-    log.error(`teslabox failed: ${err}`)
+    log.error(`[main] teslabox failed: ${err}`)
     process.exit(1)
   }
 
-  log.info('teslabox started')
+  log.info('[main] teslabox started')
 })
