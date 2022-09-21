@@ -143,7 +143,12 @@ For paid (priority) support please contact teslabox@payymail.com
    echo "/usb.bin /mnt/usb vfat defaults 0 0" >> /etc/fstab
    echo "options g_mass_storage file=/usb.bin removable=1 ro=0 stall=0 iSerialNumber=123456" > /etc/modprobe.d/g_mass_storage.conf
    ```
-12. Update system packages, upgrade and install required software:
+12. Allocate RAM drive with all available memory (minus 20%):
+   ```
+   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=80% 0 0" >> /etc/fstab
+   ```
+
+13. Update system packages, upgrade and install required software:
    ```
    curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
    apt update && apt upgrade -y
@@ -153,7 +158,7 @@ For paid (priority) support please contact teslabox@payymail.com
    echo "/usr/sbin/modprobe g_mass_storage >> /var/log/teslabox.log 2>&1" >> /etc/rc.local
    echo "exit 0" >> /etc/rc.local
    ```
-13. Download and install TeslaBox and packages:
+14. Download and install TeslaBox and packages:
    ```
    cd /root
    mkdir -p /root/teslabox
@@ -165,7 +170,7 @@ For paid (priority) support please contact teslabox@payymail.com
    export NPM_CONFIG_UNSAFE_PERM=true
    npm install
    ```
-14. Finalize the TeslaBox service:
+15. Finalize the TeslaBox service:
   - First, create the service file:
   ```
   nano /lib/systemd/system/teslabox.service
