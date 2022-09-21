@@ -58,12 +58,24 @@
         <label for="archiveCompression">Archive compression</label>
       </div>
       <div class="form-floating mt-2">
+        <input type="number" class="form-control" id="archiveDays" name="archiveDays" min="7" max="365" value="{{archiveDays}}">
+        <label for="archiveDays">Archive days</label>
+      </div>
+      <div class="form-floating mt-2">
+        <input type="text" class="form-control" id="emailRecipients" name="emailRecipients" value="{{emailRecipients}}">
+        <label for="emailRecipients">Email recipients</label>
+      </div>
+      <div class="form-floating mt-2">
         <input type="text" class="form-control" id="telegramRecipients" name="telegramRecipients" value="{{telegramRecipients}}">
         <label for="telegramRecipients">Telegram recipients</label>
       </div>
       <div class="form-check form-switch mt-3">
         <input class="form-check-input" id="stream" name="stream" type="checkbox" role="switch"{{#stream}} checked{{/stream}}>
         <label class="form-check-label" for="stream"><a href="/stream">Stream</a></label>
+      </div>
+      <div class="form-floating mt-2 mb-2">
+        <input type="text" class="form-control" id="streamAngles" name="streamAngles" value="{{streamAngles}}">
+        <label for="streamAngles">Stream angles</label>
       </div>
       {{#isPublicPassword}}
       <div class="form-check form-switch">

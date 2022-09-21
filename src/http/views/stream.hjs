@@ -28,7 +28,7 @@
       <tbody>
         <tr>
           <td>
-            <video width="100%" controls autoplay>
+            <video width="100%" controls autoplay muted>
               <source type="video/mp4">
             </video>
           </td>

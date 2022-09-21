@@ -64,11 +64,11 @@ exports.response = (req, res, next) => {
 
 exports.error = (err, req, res, next) => {
   if (_.isObject(err)) {
-    log.error(`${req.method} ${req.url} failed: ${err.message}`)
+    log.error(`[http] ${req.method} ${req.url} failed: ${err.message}`)
     res.statusCode = 500
     res.locals.response = res.locals.response || 'Server Error. <a href="/">Try again?</a>'
   } else {
-    log.warn(`${req.method} ${req.url} failed${err ? `: ${err}` : ''}`)
+    log.warn(`[http] ${req.method} ${req.url} failed${err ? `: ${err}` : ''}`)
     res.statusCode = 400
     res.locals.response = res.locals.response || 'Client Error. <a href="/">Try again?</a>'
   }

@@ -18,8 +18,11 @@ module.exports = (req, res, next) => {
     config.set('archiveSeconds', req.body.archiveSeconds || 30)
     config.set('archiveQuality', req.body.archiveQuality || 'lowest')
     config.set('archiveCompression', req.body.archiveCompression || 'superfast')
+    config.set('archiveDays', req.body.archiveDays)
+    config.set('emailRecipients', split(req.body.emailRecipients))
     config.set('telegramRecipients', split(req.body.telegramRecipients))
     config.set('stream', req.body.stream === 'on')
+    config.set('streamAngles', req.body.streamAngles ? split(req.body.streamAngles) : 'front')
     config.set('ssh', req.body.ssh === 'on')
     config.set('public', req.body.public === 'on')
 
@@ -53,8 +56,11 @@ module.exports = (req, res, next) => {
     archiveCompressionSlow: archiveCompression === 'slow',
     archiveCompressionSlower: archiveCompression === 'slower',
     archiveCompressionVeryslow: archiveCompression === 'veryslow',
+    archiveDays: config.get('archiveDays'),
+    emailRecipients: config.get('emailRecipients'),
     telegramRecipients: config.get('telegramRecipients'),
     stream: !!config.get('stream'),
+    streamAngles: config.get('streamAngles'),
     ssh: !!config.get('ssh'),
     public: !!config.get('public'),
     isPublicPassword,
