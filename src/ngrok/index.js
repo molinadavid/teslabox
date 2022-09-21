@@ -15,7 +15,7 @@ const authtoken = process.env.NGROK_AUTH_TOKEN
 const region = process.env.NGROK_REGION
 const adminHost = process.env.ADMIN_HOST
 const adminPassword = process.env.ADMIN_PASSWORD
-const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT) : 80
+const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT, 10) : 80
 
 let hosts = {}
 
@@ -23,7 +23,7 @@ exports.start = (cb) => {
   cb = cb || function () {}
 
   if (!authtoken || !region || !adminPassword) {
-    log.warn(`ngrok access is disabled because NGROK_AUTH_TOKEN, NGROK_REGION or ADMIN_PASSWORD is missing`)
+    log.warn(`[ngrok] remote access is disabled because NGROK_AUTH_TOKEN, NGROK_REGION or ADMIN_PASSWORD is missing`)
     return cb()
   }
 
@@ -41,7 +41,7 @@ exports.start = (cb) => {
           p2c(ngrok.disconnect())((err, result) => {
             if (!err) {
               hosts = {}
-              log.info('disconnected all')
+              log.info('[ngrok] disconnected all')
             }
 
             cb(err)
@@ -67,7 +67,7 @@ exports.start = (cb) => {
             hosts.ssh = host
 
             const message = `connected ssh: ${host.replace(/ssh:/, '')}`
-            log.debug(message)
+            log.debug(`[ngrok] ${message}`)
 
             telegram.sendMessage(telegramRecipients, message, true, cb)
           })
@@ -95,7 +95,7 @@ exports.start = (cb) => {
             hosts.admin = host
 
             const message = `connected admin: ${host}`
-            log.debug(message)
+            log.debug(`[ngrok] ${message}`)
 
             adminHost ? cb() : telegram.sendMessage(telegramRecipients, message, true, cb)
           })
@@ -105,7 +105,7 @@ exports.start = (cb) => {
       }
     ], (err) => {
       if (err) {
-        log.warn(`connection failed: ${err}`)
+        log.warn(`[ngrok] failed: ${err}`)
       }
 
       setTimeout(next, interval)

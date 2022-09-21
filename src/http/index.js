@@ -12,7 +12,7 @@ const timeout = 60
 
 let server
 
-const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT) : 80
+const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT, 10) : 80
 const adminPassword = process.env.ADMIN_PASSWORD
 
 exports.start = (cb) => {
@@ -35,7 +35,6 @@ exports.start = (cb) => {
   }))
 
   const isProduction = process.env.NODE_ENV === 'production'
-  const adminHost = process.env.ADMIN_HOST
   const assetsDir = path.join(__dirname, '../assets')
   const ramDir = isProduction ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 

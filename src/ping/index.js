@@ -15,12 +15,12 @@ exports.start = (cb) => {
     ping.sys.probe(host, (result) => {
       if (result) {
         if (typeof isAlive === 'undefined') {
-          log.info('connection established')
+          log.info('[ping] connection established')
         } else if (!isAlive) {
-          log.info('connection re-established')
+          log.info('[ping] connection re-established')
         }
       } else if (isAlive) {
-        log.warn('connection lost')
+        log.warn('[ping] connection lost')
       }
 
       isAlive = !!result

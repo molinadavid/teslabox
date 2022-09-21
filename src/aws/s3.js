@@ -11,7 +11,7 @@ exports.start = (cb) => {
   cb = cb || function () {}
 
   if (!accessKeyId || !secretAccessKey || !region || !bucket) {
-    log.warn(`archive is disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION and/or AWS_S3_BUCKET is missing`)
+    log.warn(`[aws/s3] archive is disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION and/or AWS_S3_BUCKET is missing`)
     return cb()
   }
 
