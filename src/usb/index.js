@@ -20,9 +20,9 @@ exports.start = (cb) => {
   const usbDir = isProduction ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb')
   const ramDir = isProduction ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 
-  _.each(['stream/out', 'archive', 'temp'], (key) => {
-    fs.mkdirSync(`${ramDir}/${key}`, { recursive: true })
-  })
+  fs.mkdirSync(path.join(ramDir, 'archive'), { recursive: true })
+  fs.mkdirSync(path.join(ramDir, 'temp'), { recursive: true })
+  fs.mkdirSync(path.join(ramDir, 'stream', 'out'), { recursive: true })
 
   const startFolder = controllers.formatDate().replace(' ', '_').replace(/:/g, '-')
 
@@ -30,6 +30,8 @@ exports.start = (cb) => {
     const isStream = config.get('stream')
     const isArchive = config.get('archive')
     const archiveClips = (Math.ceil(config.get('archiveSeconds') / 60) + 1) * 4
+    const archiveDays = parseInt(config.get('archiveDays') || 0, 10)
+    const streamAngles = _.split(config.get('streamAngles'), ',')
 
     async.series([
       (cb) => {
@@ -59,9 +61,10 @@ exports.start = (cb) => {
 
             files.push(row)
 
-            if (isStream && row.includes('RecentClips') && file.endsWith('.mp4') && file > startFolder) {
-              fs.copyFile(row, `${ramDir}/stream/${angle}.mp4`, cb)
-              log.debug(`streaming ${rootFolder}/${file}`)
+            if (isStream && row.includes('RecentClips') && file.endsWith('.mp4') && file > startFolder && streamAngles.includes(angle)) {
+              const destination = path.join(ramDir, 'stream', `${angle}.mp4`)
+              fs.copyFile(row, destination, cb)
+              log.debug(`[usb] streaming ${destination}`)
             } else if (isArchive && file === 'event.json' && folder > startFolder) {
               fs.readFile(row, (err, result) => {
                 if (err) {
@@ -79,7 +82,7 @@ exports.start = (cb) => {
                 event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
 
                 const clips = _.filter(files, (file) => {
-                  return file.includes(`/${rootFolder}/${folder}/`) && file.endsWith('.mp4')
+                  return file.includes(folder) && file.endsWith('.mp4')
                 }).sort().reverse().slice(0, archiveClips)
 
                 if (!clips.length) {
@@ -90,28 +93,32 @@ exports.start = (cb) => {
                 const arr = _.last(clips[0].split('/')).split(/[-_]/)
                 event.adjustedTimestamp = `${arr[0]}-${arr[1]}-${arr[2]}T${arr[3]}:${arr[4]}:${arr[5]}`
 
-                const copyFolder = `${ramDir}/archive/${folder}`
+                const destination = path.join(ramDir, 'archive', folder)
 
                 async.series([
                   (cb) => {
-                    fs.mkdir(copyFolder, { recursive: true }, cb)
+                    fs.mkdir(destination, { recursive: true }, cb)
                   },
                   (cb) => {
-                    fs.writeFile(`${copyFolder}/${file}`, JSON.stringify(event), cb)
+                    fs.writeFile(path.join(destination, file), JSON.stringify(event), cb)
                   },
                   (cb) => {
                     async.each(clips, (clip, cb) => {
                       const parts = clip.split(/[\\/]/)
                       const file = _.last(parts)
-                      fs.copyFile(clip, `${copyFolder}/${file}`, cb)
+                      fs.copyFile(clip, path.join(destination, file), cb)
                     }, cb)
                   },
                   (cb) => {
-                    log.debug(`archiving ${rootFolder}/${folder}`)
+                    log.debug(`[usb] archiving ${destination}`)
                     cb()
                   }
                 ], cb)
               })
+            } else if (archiveDays && file === 'event.json' && Math.ceil((new Date() - new Date(folder.split('_')[0] + ' ' + folder.split('_')[1].replace(/-/g, ':'))) / 86400000) > archiveDays) {
+              const _folder = path.join(row, '..')
+              log.debug(`[usb] deleting ${_folder}`)
+              fs.rm(_folder, { recursive: true }, cb)
             } else {
               cb()
             }
@@ -127,7 +134,7 @@ exports.start = (cb) => {
       },
     ], (err) => {
       if (err) {
-        log.warn(`usb failed: ${err}`)
+        log.warn(`[usb] failed: ${err}`)
       }
 
       setTimeout(next, interval)
