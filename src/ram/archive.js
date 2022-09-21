@@ -2,6 +2,7 @@ const log = require('../log')
 const config = require('../config')
 const ping = require('../ping')
 const s3 = require('../aws/s3')
+const ses = require('../aws/ses')
 const telegram = require('../telegram')
 const controllers = require('../http/controllers')
 
@@ -13,7 +14,6 @@ const fs = require('fs')
 const { exec } = require('child_process')
 
 const interval = 10000
-const parallel = 1
 const expires = 7 * 86400
 
 const ramDir = process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
@@ -38,15 +38,16 @@ exports.start = (cb) => {
       const carName = config.get('carName')
       const archiveQuality = config.get('archiveQuality').toUpperCase()
       const archiveCompression = config.get('archiveCompression')
-      const archiveSeconds = Number(config.get('archiveSeconds'))
+      const archiveSeconds = parseInt(config.get('archiveSeconds'), 10)
+      const emailRecipients = _.split(config.get('emailRecipients'), ',')
       const telegramRecipients = _.split(config.get('telegramRecipients'), ',')
 
-      async.eachLimit(result, parallel, (row, cb) => {
+      async.eachSeries(result, (row, cb) => {
         const parts = row.split(/[\\/]/)
         const folder = _.nth(parts, -2)
 
         let event
-        let outputFile
+        let destination
 
         async.series([
           (cb) => {
@@ -68,22 +69,27 @@ exports.start = (cb) => {
             })
           },
           (cb) => {
-            outputFile = row.replace('event.json', `${event.type}.mp4`)
+            destination = row.replace('event.json', `${event.type}.mp4`)
+            silentDestination = destination.replace('.mp4', `-silent.mp4`)
 
-            fs.stat(outputFile, (err, result) => {
+            fs.stat(destination, (err, result) => {
               if (err || !result) {
-                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${ramDir}/temp ${event.camera === 'rear' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-${Math.ceil(archiveSeconds / 2)} --sentry_end_offset=${archiveSeconds - Math.ceil(archiveSeconds / 2)} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${outputFile}`, cb)
+                exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${path.join(ramDir, 'temp')} ${event.angle === 'back' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-${Math.ceil(archiveSeconds / 2)} --sentry_end_offset=${archiveSeconds - Math.ceil(archiveSeconds / 2)} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${destination}`, cb)
               } else {
                 cb()
               }
             })
           },
           (cb) => {
+            // add silent audio to make telegram video player consistent (thanks https://github.com/genadyo)
+            exec(`ffmpeg -hide_banner -loglevel error -y -i ${destination} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${silentDestination}`, cb)
+          },
+          (cb) => {
             if (!ping.isAlive()) {
               return cb()
             }
 
-            fs.readFile(outputFile, (err, result) => {
+            fs.readFile(silentDestination, (err, result) => {
               if (err) {
                 return cb(err)
               }
@@ -108,13 +114,39 @@ exports.start = (cb) => {
                   })
                 },
                 (cb) => {
-                  const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.adjustedTimestamp)}\n${url ? `[Download](${url}) | ` : ''}[Map](https://www.google.com/maps?q=${event.est_lat},${event.est_lon})`
 
                   async.parallel([
                     (cb) => {
+                      if (!emailRecipients.length) {
+                        return cb()
+                      }
+
+                      const subject = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.adjustedTimestamp)}`
+                      const text = `${url ? `[Download] <${url}> | ` : ''}[Map] <https://www.google.com/maps?q=${event.est_lat},${event.est_lon}>`
+                      const html = `${url ? `
+                      <video width="100%" controls>
+                        <source type="video/mp4" src="${url}">
+                      </video>
+                      <br>
+                      <a href="${url}" target="_blank">Download</a> | ` : ''}<a href="https://www.google.com/maps?q=${event.est_lat},${event.est_lon}" target="_blank">Map</a>`
+
+                      ses.sendEmail(emailRecipients, subject, text, html, (err) => {
+                        if (err) {
+                          log.warn(`[ram/archive] email failed: ${err}`)
+                        }
+
+                        cb()
+                      })
+                    },
+                    (cb) => {
+                      if (!telegramRecipients.length) {
+                        return cb()
+                      }
+
+                      const message = `${carName} ${_.upperFirst(event.type)} ${controllers.formatDate(event.adjustedTimestamp)}\n${url ? `[Download](${url}) | ` : ''}[Map](https://www.google.com/maps?q=${event.est_lat},${event.est_lon})`
                       telegram.sendVideo(telegramRecipients, url, message, true, (err) => {
                         if (err) {
-                          log.warn(`archive telegram failed: ${err}`)
+                          log.warn(`[ram/archive] telegram failed: ${err}`)
                         }
 
                         cb()
@@ -124,7 +156,7 @@ exports.start = (cb) => {
                 }
               ], (err) => {
                 if (err) {
-                  log.warn(`archive failed: ${err}`)
+                  log.warn(`[ram/archive] failed: ${err}`)
                 } else {
                   archives.push({
                     created: new Date(event.adjustedTimestamp),
@@ -136,7 +168,7 @@ exports.start = (cb) => {
                     processed: new Date()
                   })
 
-                  log.debug(`archived ${folder}`)
+                  log.debug(`[ram/archive] archived ${folder}`)
                 }
 
                 cb()
@@ -145,9 +177,9 @@ exports.start = (cb) => {
           }
         ], (err) => {
           if (err || _.find(archives, { folder })) {
-            fs.rmdir(`${ramDir}/archive/${folder}`, { recursive: true }, (err) => {
+            fs.rm(path.join(ramDir, 'archive', folder), { recursive: true }, (err) => {
               if (err) {
-                log.warn(`archiving delete failed: ${err}`)
+                log.warn(`[ram/archive] delete failed: ${err}`)
               }
 
               cb()
