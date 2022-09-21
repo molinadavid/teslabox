@@ -5,7 +5,7 @@ Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events (al
 
 Can also turn your Tesla to a surveillance/security camera, granting access to anyone with a browser.
 
-![](https://cdn.teslarpi.com/assets/img/teslabox.gif)
+<img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
 ## Prerequisites
 - Raspberry Pi 4 with at least 4GB of ram
@@ -52,7 +52,7 @@ For paid (priority) support please contact teslabox@payymail.com
    - Click "Next: Review"
    - Click "Create User"
    - Copy both the Access key ID and Secret access key
- 4. If you want to be notified by email:
+4. If you want to be notified by email:
    - Edit the policy you just created
    - Click "Add additional permissions"
    - Service: SES v2
@@ -81,17 +81,19 @@ For paid (priority) support please contact teslabox@payymail.com
 2. Under Operating System, choose Raspberry Pi OS *Lite* (64-bit)
 3. Under Storage, choose the SD card you wish to format
 4. Under settings:
-   4.1. Set hostname to whatever you like (i.e teslabox.local)
-   4.2. Enable SSH and "Use password authentication"
-   4.3. Set username (i.e pi) and password to whatever you like
-   4.4. Configure wireless LAN, SSID, Password and country. This should be your home WiFi for now
-   4.5. Set local settings with your Time zone
-   4.6. Check "Eject media when finished"
-   4.7. Click SAVE
-   ![](https://cdn.teslarpi.com/assets/img/pi_imager_settings.png)
+   - Set hostname to whatever you like (i.e teslabox.local)
+   - Enable SSH and "Use password authentication"
+   - Set username (i.e pi) and password to whatever you like
+   - Configure wireless LAN, SSID, Password and country. This should be your home WiFi for now
+   - Set local settings with your Time zone
+   - Check "Eject media when finished"
+   - Click SAVE
+
+<img src="https://cdn.teslarpi.com/assets/img/pi_image_settings.png" width="250" hspace="30">
+
 5. Click WRITE and wait for the process to complete and verify
 6. Eject the SD card, insert to your Raspberry Pi and boot it up
-7. SSH to the hostname from 4.1 using credentials from 4.3 (i.e ssh pi@teslabox.local)
+7. SSH to the hostname you have setup with the credentials you chose (i.e ssh pi@teslabox.local)
 8. Switch to root:
   ```
   sudo -i
@@ -105,12 +107,11 @@ For paid (priority) support please contact teslabox@payymail.com
   sed -i 's/rootwait/rootwait modules-load=dwc2/g' /boot/cmdline.txt
   ```
 10. Add one or more WiFi networks with increasing priority:
-  10.1. First, edit your WiFi configuration file:
+  - First, edit your WiFi configuration file:
   ```
   nano /etc/wpa_supplicant/wpa_supplicant.conf
   ```
-
-  10.2. If you want TeslaBox to prefer your home network, then your USB access point, then your mobile hotspot,  configuration should be:
+  - If you want TeslaBox to prefer your home network, then your USB access point, then your mobile hotspot,  configuration should be:
 
   ```
    network={
@@ -165,15 +166,14 @@ For paid (priority) support please contact teslabox@payymail.com
    npm install
    ```
 14. Finalize the TeslaBox service:
-  14.1. First, create the service file:
+  - First, create the service file:
   ```
   nano /lib/systemd/system/teslabox.service
   ```
-
-  14.2. Paste this, with each Environment variable appended with its =value (if needed):
+  - Paste this, with each Environment variable appended with its =value (if needed):
   ```
   [Unit]
-  Description=App
+  Description=TeslaBox
   After=network.target
 
   [Service]
@@ -215,7 +215,7 @@ For paid (priority) support please contact teslabox@payymail.com
   WantedBy=multi-user.target
   ```
 
-  14.3. Install the service to start at every boot as follows:
+  - Install the service to start at every boot as follows:
   ```
   systemctl daemon-reload
   systemctl enable teslabox
@@ -231,7 +231,7 @@ For paid (priority) support please contact teslabox@payymail.com
 1. Connect TeslaBox to your computer via USB cable and wait for it to appear as drive
 2. Create an empty ```TeslaCam``` under the root folder of the drive
 3. Make sure TeslaBox is connected to your home network via ethernet cable or home WiFi
-4. Browse to the hostname from 4.1 to edit these settings:
+4. Browse to the hostname you have setup to edit these settings:
 - Car name (appears next to each notification)
 - Log level (log verbosity. recommended: Debug)
 - Archive (enables archiving)
@@ -299,19 +299,19 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
 1. SSH to your Raspberry Pi
 2. Perform the following as sudo using ```sudo -i```
 
-   2.1. Download and re-install TeslaBox and packages:
-   ```
-   cd /root
-   curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
-   unzip -o main.zip
-   cp -r teslabox-main/* teslabox
-   rm -rf teslabox-main
-   cd teslabox
-   export NPM_CONFIG_UNSAFE_PERM=true
-   npm install
-   ```
+     - Download and re-install TeslaBox and packages:
+    ```
+    cd /root
+    curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
+    unzip -o main.zip
+    cp -r teslabox-main/* teslabox
+    rm -rf teslabox-main
+    cd teslabox
+    export NPM_CONFIG_UNSAFE_PERM=true
+    npm install
+    ```
 
-   2.2. Restart TeslaBox service:
+   - Restart TeslaBox service:
    ```
    systemctl restart teslabox
    ```
