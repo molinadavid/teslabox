@@ -55,26 +55,6 @@ exports.sendVideo = (recipients, videoUrl, caption, isSilent, cb) => {
   }
 
   async.each(_.compact(recipients), (recipient, cb) => {
-    p2c(client.sendAnimation(recipient, videoUrl, params))(cb)
-  }, cb)
-}
-
-
-exports.sendVideoOld = (recipients, videoUrl, caption, isSilent, cb) => {
-  cb = cb || function () {}
-
-  if (!client) {
-    return cb()
-  }
-
-  const params = {
-    caption,
-    disable_notification: !!isSilent,
-    supports_streaming: true,
-    parse_mode: 'Markdown'
-  }
-
-  async.each(_.compact(recipients), (recipient, cb) => {
     p2c(client.sendVideo(recipient, videoUrl, params))(cb)
   }, cb)
 }
