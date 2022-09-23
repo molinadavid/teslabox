@@ -321,6 +321,9 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
    systemctl restart teslabox
    ```
 
+## License
+TeslaBox is for PRIVATE, NON-COMMERCIAL, NON-GOVERNMENTAL USE ONLY!
+
 ## Support
 TeslaBox is not affiliated or supported by Tesla. There is no official support whatsoever. As per the license this is provided As-Is. **Use at your own risk!**
 
