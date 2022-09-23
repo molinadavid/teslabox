@@ -3,6 +3,7 @@
   "description": "teslabox",
   "version": "0.3.1",
   "private": true,
+  "license": "PRIVATE, NON-COMMERCIAL, NON-GOVERNMENTAL USE ONLY!",
   "scripts": {
     "start": "node src/index.js",
     "development": "nodemon src/index.js",
