@@ -73,7 +73,7 @@ For paid (priority) support please contact teslabox@payymail.com
 2. Search and contact [@Botfather](https://telegram.me/BotFather) user
 3. Enter /newbot and follow the wizard to create a new bot and retrieve your secret HTTP API token
 4. Contact the new bot you just created and click "Start"
-5. Search and contact [@get_id_bot](https://telegram.me/get_id_bot) user
+5. Search and contact [@getmyid_bot](https://telegram.me/getmyid_bot) user
 6. Enter anything to retrieve your Chat ID
 
 ### Raspberry Pi
