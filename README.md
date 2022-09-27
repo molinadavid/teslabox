@@ -1,9 +1,9 @@
 # TeslaBox
 Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
-Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events (along with a copy of each clip) via Telegram and allows remote streaming while parked or driving!
+Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events via email (or Telegram, along with a copy of each clip) and allows remote streaming while parked or driving!
 
-Can also turn your Tesla to a surveillance/security camera, granting access to anyone with a browser.
+Starting from version 0.4, TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
 
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
@@ -17,7 +17,7 @@ Can also turn your Tesla to a surveillance/security camera, granting access to a
 
 ## Optionally:
 - [AWS account](https://aws.amazon.com/)
-- [Ngrok account](https://ngrok.com/) (preferably paid)
+- [Tailscale account](https://tailscale.com/)
 - [Telegram account](https://telegram.org/)
 
 ## Installation
@@ -63,25 +63,25 @@ For paid (priority) support please contact teslabox@payymail.com
    - Choose either Domain or Email address with the address(es) you want to notify
    - Verify the identity as per the instructions
 
-### Ngrok (required for remote access)
-1. Sign into your Ngrok account
-2. Retrieve your secret token under *Getting Started > Your Authtoken*
-3. On paid plans, create your custom domain (you.example.com) or subdomain (you.ngrok.io)
+### Tailscale (required for remote access)
+1. Sign up for a free account
+2. Add the device(s) you wish to connect from
+3. Under DNS > Enable MagicDNS
 
 ### Telegram (required for notifications)
 1. Sign into your Telegram account
 2. Search and contact [@Botfather](https://telegram.me/BotFather) user
 3. Enter /newbot and follow the wizard to create a new bot and retrieve your secret HTTP API token
 4. Contact the new bot you just created and click "Start"
-5. Search and contact [@get_id_bot](https://telegram.me/get_id_bot) user
-6. Enter anything to retrieve your Chat ID
+5. Search and contact [@getmyid_bot](https://telegram.me/getmyid_bot) user
+6. Start or enter anything to retrieve your Chat ID
 
 ### Raspberry Pi
 1. Download and run [Raspberry Pi Imager](https://www.raspberrypi.com/software/)
 2. Under Operating System, choose Raspberry Pi OS *Lite* (64-bit)
 3. Under Storage, choose the SD card you wish to format
 4. Under settings:
-   - Set hostname to whatever you like (i.e teslabox.local)
+   - Set hostname to whatever you like (i.e model3.local)
    - Enable SSH and "Use password authentication"
    - Set username (i.e pi) and password to whatever you like
    - Configure wireless LAN, SSID, Password and country. This should be your home WiFi for now
@@ -93,7 +93,7 @@ For paid (priority) support please contact teslabox@payymail.com
 
 5. Click WRITE and wait for the process to complete and verify
 6. Eject the SD card, insert to your Raspberry Pi and boot it up
-7. SSH to the hostname you have setup with the credentials you chose (i.e ssh pi@teslabox.local)
+7. SSH to the hostname you have setup with the credentials you chose (i.e ssh pi@model3.local)
 8. Switch to root:
   ```
   sudo -i
@@ -135,19 +135,18 @@ For paid (priority) support please contact teslabox@payymail.com
      id_str="hotspot"
    }
   ```
-11. Allocate USB space with all available storage (minus 8GB):
+11. Allocate USB space with all available storage (minus 10GB):
    ```
-   size="$(($(df -B1G --output=avail / | tail -1) - 8))"
+   size="$(($(df -B1G --output=avail / | tail -1) - 10))"
    fallocate -l "$size"G /usb.bin
    mkdosfs /usb.bin -F 32 -I
    echo "/usb.bin /mnt/usb vfat defaults 0 0" >> /etc/fstab
    echo "options g_mass_storage file=/usb.bin removable=1 ro=0 stall=0 iSerialNumber=123456" > /etc/modprobe.d/g_mass_storage.conf
    ```
-12. Allocate RAM drive with all available memory (minus 20%):
+12. Allocate RAM drive with all available memory (minus 30%):
    ```
-   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=80% 0 0" >> /etc/fstab
+   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=70% 0 0" >> /etc/fstab
    ```
-
 13. Update system packages, upgrade and install required software:
    ```
    curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
@@ -158,7 +157,12 @@ For paid (priority) support please contact teslabox@payymail.com
    echo "/usr/sbin/modprobe g_mass_storage >> /var/log/teslabox.log 2>&1" >> /etc/rc.local
    echo "exit 0" >> /etc/rc.local
    ```
-14. Download and install TeslaBox and packages:
+14. Install Tailscale and click the authorize link to add this machine to your network
+  ```
+  curl -fsSL https://tailscale.com/install.sh | sh
+  tailscale up
+  ```
+15. Download and install TeslaBox and packages:
    ```
    cd /root
    mkdir -p /root/teslabox
@@ -170,7 +174,7 @@ For paid (priority) support please contact teslabox@payymail.com
    export NPM_CONFIG_UNSAFE_PERM=true
    npm install
    ```
-15. Finalize the TeslaBox service:
+16. Finalize the TeslaBox service:
   - First, create the service file:
   ```
   nano /lib/systemd/system/teslabox.service
@@ -193,20 +197,6 @@ For paid (priority) support please contact teslabox@payymail.com
   # To enable telegram notification, enter this
   Environment="TELEGRAM_ACCESS_TOKEN="
 
-  # To enable remote access, enter these
-  Environment="NGROK_AUTH_TOKEN="
-  # Choose the region closest to you (us, eu, ap, au, sa, jp or in)
-  Environment="NGROK_REGION=us"
-
-  # To enable remote admin access, enter password
-  Environment="ADMIN_PASSWORD="
-
-  # To enable remote public (stream-only) access, enter password (this mustn't be the same as the admin password)
-  Environment="PUBLIC_PASSWORD="
-
-  # For paid Ngrok accounts, enter your custom domain ("you.example.com") or subdomain ("you" for you.ngrok.io)
-  Environment="ADMIN_HOST="
-
   # If your run other projects, like Tesla Android, change the port number to avoid conflict
   Environment="ADMIN_PORT=80"
 
@@ -228,7 +218,88 @@ For paid (priority) support please contact teslabox@payymail.com
   systemctl status teslabox
   ```
 
-  If the status is Green and shows active (running), continue to setup
+  If the status is Green and shows active (running), continue to setup.
+
+## Optionally install TeslaMate
+1. Install Docker and Docker Compose
+   ```
+   curl -sSL https://get.docker.com | sh
+   usermod -aG docker pi
+   apt install -y libffi-dev libssl-dev
+   apt remove python-configparser
+   pip3 -v install docker-compose
+   ```
+2. Create a docker compose file:
+   ```
+   nano /root/docker-compose.yml
+   ```
+3. Paste this, with the environments variables ENCRYPTION_KEY and DATABASE_PASS/POSTGRES_PASSWORD/DATABASE_PASS replaced with actual secrets:
+   ```
+   version: "3"
+
+   services:
+     teslamate:
+       image: teslamate/teslamate:latest
+       restart: always
+       environment:
+         - ENCRYPTION_KEY=
+         - DATABASE_USER=teslamate
+         - DATABASE_PASS=
+         - DATABASE_NAME=teslamate
+         - DATABASE_HOST=database
+         - MQTT_HOST=mosquitto
+       ports:
+         - 4000:4000
+       volumes:
+         - ./import:/opt/app/import
+       cap_drop:
+         - all
+
+     database:
+       image: postgres:14
+       restart: always
+       environment:
+         - POSTGRES_USER=teslamate
+         - POSTGRES_PASSWORD=
+         - POSTGRES_DB=teslamate
+       volumes:
+         - teslamate-db:/var/lib/postgresql/data
+
+     grafana:
+       image: teslamate/grafana:latest
+       restart: always
+       environment:
+         - DATABASE_USER=teslamate
+         - DATABASE_PASS=
+         - DATABASE_NAME=teslamate
+         - DATABASE_HOST=database
+         - GF_AUTH_ANONYMOUS_ENABLED=true
+         - GF_AUTH_ANONYMOUS_ORG_ROLE=Editor
+       ports:
+         - 3000:3000
+       volumes:
+         - teslamate-grafana-data:/var/lib/grafana
+
+     mosquitto:
+       image: eclipse-mosquitto:2
+       restart: always
+       command: mosquitto -c /mosquitto-no-auth.conf
+       # ports:
+       #   - 1883:1883
+       volumes:
+         - mosquitto-conf:/mosquitto/config
+         - mosquitto-data:/mosquitto/data
+
+   volumes:
+     teslamate-db:
+     teslamate-grafana-data:
+     mosquitto-conf:
+     mosquitto-data:
+   ```
+4. Run docker
+  ```
+  docker-compose up -d
+  ```
 
 ## Setup
 
@@ -248,17 +319,25 @@ For paid (priority) support please contact teslabox@payymail.com
 - Telegram recipients (comma seperated list of Telegram Chat IDs that should be notified)
 - Stream (enables streaming)
 - Stream angles (comma seperated list of angles that should be streamed. possibly: front, right, back, left)
-- SSH (enables remote shell access)
-- Public (enables remote public streaming)
+
+### Tailscale setup
+1. Under DNS -> Nameservers, note the hostname suffix MagicDNS has generated (something like foo.bar.beta.tailscale.net)
+2. Your magic {hostname} is the machine name followed by this suffix (i.e model3.foo.bar.beta.tailscale.net)
+
+### TeslaMate setup
+1. Configure TeslaMate under http://{hostname}:4000
+  - Add an access and refresh token from a secondary Tesla account using 3rd party token generator
+  - Set your Home Geo-Fence and charging rate
+  - Under settings, set your language/units
+  - Under settings, set Web App URL as http://{hostname}:4000 and Dashboards as http://{hostname}:3000 with {hostname} replaced to your magic hostname
+2. Access Grafana dashboards through the TeslaMate Web App URL at http://{hostname}:4000
+3. Alternatively, setup and configure your dashboards under http://{hostname}:3000
 
 ### In-car connectivity
 TeslaBox works best with in-car WiFi. I personally use a 4G USB access point plugged into the main console with a short USB-A (female) to USB-C (male) cable. You can also use your mobile WiFi hotspot, or wait for the car to use your home WiFi as you park.
 
 ### Admin access
-This works if you entered admin password. Settings are explained above under Initial setup. To logout, click the "Logout" icon at the bottom.
-
-### Public access
-This works if you entered public password. It will restrict public access to stream view only. To logout, click the "Logout" button at the top.
+Settings are explained above under Initial setup and always available at: http://{hostname}
 
 ## Usage
 
@@ -280,7 +359,7 @@ If the event is sensed on the rear, then the back camera is enlarged, otherwise 
 Dashcam and sentry videos are always available through the Dashcam app on your Tesla, or by connecting TeslaBox using USB cable to your computer.
 
 ### Stream
-This is similar to Tesla's Sentry Mode Live Camera feature but works even on drive plus available on any browser. To some extent, you can use it as a public security camera.
+This is similar to Tesla's Sentry Mode Live Camera feature but works even on drive plus available on any browser. To some extent, you can use it as a security camera.
 
 There is, however, a 1 minute delay for each clip which is the time it takes to close and prepare the file. You can choose what angles to stream and switch between them. Video would automatically progress to the next minute when it is done playing.
 
