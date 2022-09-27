@@ -4,8 +4,6 @@ const package = require('../../../package.json')
 
 const _ = require('lodash')
 
-const isPublicPassword = !!process.env.PUBLIC_PASSWORD
-
 const split = (str) => {
   return _.join(_.split(str, /[\r\n, ]+/), ',')
 }
@@ -23,8 +21,6 @@ module.exports = (req, res, next) => {
     config.set('telegramRecipients', split(req.body.telegramRecipients))
     config.set('stream', req.body.stream === 'on')
     config.set('streamAngles', req.body.streamAngles ? split(req.body.streamAngles) : 'front')
-    config.set('ssh', req.body.ssh === 'on')
-    config.set('public', req.body.public === 'on')
 
     res.location('/')
     return next()
@@ -61,9 +57,6 @@ module.exports = (req, res, next) => {
     telegramRecipients: config.get('telegramRecipients'),
     stream: !!config.get('stream'),
     streamAngles: config.get('streamAngles'),
-    ssh: !!config.get('ssh'),
-    public: !!config.get('public'),
-    isPublicPassword,
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),

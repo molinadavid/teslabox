@@ -8,10 +8,8 @@ exports.start = (cb) => {
 
   db = new JSONdb(path.join(__dirname, '../../config.json'))
 
-  // for security purposes, disable these features on every run
+  // for performance reasons, disable this feature on every run
   db.set('stream', false)
-  db.set('ssh', false)
-  db.set('public', false)
 
   cb()
 }

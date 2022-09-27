@@ -4,7 +4,6 @@ const routes = require('./routes')
 const compression = require('compression')
 const express = require('express')
 const favicon = require('serve-favicon')
-const cookieParser = require('cookie-parser')
 const http = require('http')
 const path = require('path')
 
@@ -13,17 +12,11 @@ const timeout = 60
 let server
 
 const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT, 10) : 80
-const adminPassword = process.env.ADMIN_PASSWORD
 
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  if (!adminPassword) {
-    return cb()
-  }
-
   const app = express()
-
   app.disable('x-powered-by')
   app.disable('etag')
   app.enable('case sensitive routing')
@@ -47,15 +40,7 @@ exports.start = (cb) => {
   }
 
   app.use('/assets/', express.static(assetsDir, params))
-
-  app.use(cookieParser(null, {
-    httpOnly: true,
-    sameSite: true
-  }))
-
-  app.use(controllers.auth)
   app.use('/ram/', express.static(ramDir, params))
-
   app.set('views', path.join(__dirname, './views'))
   app.set('view engine', 'hjs')
   app.use(express.urlencoded({ extended: true }))

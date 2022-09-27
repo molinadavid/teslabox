@@ -6,7 +6,6 @@ const aws = require('./aws')
 const http = require('./http')
 const telegram = require('./telegram')
 const ping = require('./ping')
-const ngrok = require('./ngrok')
 const usb = require('./usb')
 const ram = require('./ram')
 
@@ -19,7 +18,6 @@ async.series([
   http.start,
   telegram.start,
   ping.start,
-  ngrok.start,
   usb.start,
   ram.start
 ], (err) => {
