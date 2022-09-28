@@ -3,7 +3,7 @@ Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
 Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events via email (or Telegram, along with a copy of each clip) and allows remote streaming while parked or driving!
 
-Starting from version 0.4, TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
+Starting from version 0.4.0, TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
 
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
@@ -254,6 +254,9 @@ For paid (priority) support please contact teslabox@payymail.com
          - ./import:/opt/app/import
        cap_drop:
          - all
+       dns:
+         - 8.8.8.8
+         - 8.8.4.4
 
      database:
        image: postgres:14
