@@ -330,6 +330,8 @@ For paid (priority) support please contact teslabox@payymail.com
 - Telegram recipients (comma seperated list of Telegram Chat IDs that should be notified)
 - Stream (enables streaming)
 - Stream angles (comma seperated list of angles that should be streamed. possibly: front, right, back, left)
+- Copy (enables copying)
+- Copy folder (where to store copied files)
 
 ### Tailscale setup
 1. Under DNS -> Nameservers, note the hostname suffix MagicDNS has generated (something like foo.bar.beta.tailscale.net)
@@ -377,6 +379,11 @@ There is, however, a 1 minute delay for each clip which is the time it takes to 
 If sentry mode is disabled or car is asleep, you may not see any new streams.
 
 This feature is automatically disabled when the car goes to sleep or TeslaBox restarts.
+
+### Copy
+This functions as a DVR and will make a copy of EACH file indefinitely until you delete it. You can choose what angles to copy and the folder name, which will be created if not yet exists.
+
+Perfect for roadtrips :)
 
 ## Important considerations
 TeslaBox neither use any Tesla API nor requires any Tesla token. It only replaces your Tesla's standard USB or SSD drive with Micro-SD card on a Raspberry Pi.

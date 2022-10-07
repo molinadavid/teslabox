@@ -39,17 +39,24 @@ exports.start = (cb) => {
 
     const isCopy = !!config.get('copy')
     const copyFolder = config.get('copyFolder')
-    const copyDir = isCopy && copyFolder ? path.join(usbDir, copyFolder) : false
+    const copyAngles = _.compact(_.split(config.get('copyAngles'), ','))
+    const copyDir = isCopy && copyFolder && copyAngles.length ? path.join(usbDir, copyFolder) : false
 
     async.series([
       (cb) => {
         isProduction ? exec(`mount ${usbDir} &> /dev/null`, cb) : cb()
       },
       (cb) => {
-        copyDir ? fs.mkdir(copyDir, { recursive: true }, cb) : cb()
+        if (!copyDir) {
+          return cb()
+        }
+
+        fs.mkdir(copyDir, { recursive: true }, (err) => {
+          err?.code === 'EEXIST' ? cb() : cb(err)
+        })
       },
       (cb) => {
-        glob(`${usbDir}/**/+(event.json|*.mp4)`, (err, result) => {
+        glob(`${usbDir}/TeslaCam/**/+(event.json|*.mp4)`, (err, result) => {
           if (err) {
             return cb(err)
           }
@@ -79,7 +86,7 @@ exports.start = (cb) => {
                   }
                 },
                 (cb) => {
-                  if (copyDir) {
+                  if (copyDir && copyAngles.includes(angle)) {
                     const destination = path.join(copyDir, file)
                     log.debug(`[usb] copying ${destination}`)
                     fs.copyFile(row, destination, cb)
@@ -126,7 +133,9 @@ exports.start = (cb) => {
 
                     async.series([
                       (cb) => {
-                        fs.mkdir(destination, { recursive: true }, cb)
+                        fs.mkdir(destination, { recursive: true }, (err) => {
+                          err?.code === 'EEXIST' ? cb() : cb(err)
+                        })
                       },
                       (cb) => {
                         fs.writeFile(path.join(destination, file), JSON.stringify(event), cb)

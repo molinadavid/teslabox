@@ -23,6 +23,7 @@ module.exports = (req, res, next) => {
     config.set('streamAngles', req.body.streamAngles ? split(req.body.streamAngles) : 'front')
     config.set('copy', req.body.copy === 'on')
     config.set('copyFolder', req.body.copyFolder || '')
+    config.set('copyAngles', req.body.copyAngles ? split(req.body.copyAngles) : 'front')
 
     res.location('/')
     return next()
@@ -59,6 +60,7 @@ module.exports = (req, res, next) => {
     telegramRecipients: config.get('telegramRecipients'),
     stream: !!config.get('stream'),
     streamAngles: config.get('streamAngles'),
+    copyAngles: config.get('copyAngles'),
     copy: !!config.get('copy'),
     copyFolder: config.get('copyFolder'),
     time: controllers.formatDate(),
