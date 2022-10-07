@@ -145,9 +145,9 @@ For paid (priority) support please contact teslabox@payymail.com
    echo "/usb.bin /mnt/usb vfat defaults 0 0" >> /etc/fstab
    echo "options g_mass_storage file=/usb.bin removable=1 ro=0 stall=0 iSerialNumber=123456" > /etc/modprobe.d/g_mass_storage.conf
    ```
-12. Allocate RAM drive with all available memory (minus 30%):
+12. Allocate RAM drive with 50% of available memory:
    ```
-   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=70% 0 0" >> /etc/fstab
+   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=50% 0 0" >> /etc/fstab
    ```
 13. Update system packages, upgrade and install required software:
    ```
@@ -256,6 +256,15 @@ For paid (priority) support please contact teslabox@payymail.com
          - ./import:/opt/app/import
        cap_drop:
          - all
+       dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+        - 8.8.4.4
+        - 9.9.9.9
+        - 149.112.112.112
+        - 208.67.222.222
+        - 208.67.220.220
 
      database:
        image: postgres:14
@@ -292,9 +301,6 @@ For paid (priority) support please contact teslabox@payymail.com
          - mosquitto-conf:/mosquitto/config
          - mosquitto-data:/mosquitto/data
 
-   networks:
-     host:
-
    volumes:
      teslamate-db:
      teslamate-grafana-data:
@@ -309,12 +315,12 @@ For paid (priority) support please contact teslabox@payymail.com
 ## Setup
 
 ### Initial setup
-1. Connect TeslaBox to your computer via USB cable and wait for it to appear as drive
+1. Connect (or Re-connect) TeslaBox to your computer via USB cable and wait for it to appear as drive
 2. Create an empty ```TeslaCam``` under the root folder of the drive
 3. Make sure TeslaBox is connected to your home network via ethernet cable or home WiFi
 4. Browse to the hostname you have setup to edit these settings:
 - Car name (appears next to each notification)
-- Log level (log verbosity. recommended: Debug)
+- Log level (log verbosity. recommended: Warning)
 - Archive (enables archiving)
 - Archive seconds (the longer you set this, the more time and space each clip would take to process. recommended: 30)
 - Archive quality (the higher you set this, the more space each clip would take. recommended: Lowest)
@@ -391,10 +397,10 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
      - Download and re-install TeslaBox and packages:
     ```
     cd /root
-    curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
-    unzip -o main.zip
-    cp -r teslabox-main/* teslabox
-    rm -rf teslabox-main
+    curl -o dev.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/dev
+    unzip -o dev.zip
+    cp -r teslabox-dev/* teslabox
+    rm -rf teslabox-dev
     cd teslabox
     export NPM_CONFIG_UNSAFE_PERM=true
     npm install
