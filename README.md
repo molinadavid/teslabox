@@ -168,10 +168,10 @@ For paid (priority) support please contact teslabox@payymail.com
    ```
    cd /root
    mkdir -p /root/teslabox
-   curl -o dev.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/dev
-   unzip -o dev.zip
-   cp -r teslabox-dev/* teslabox
-   rm -rf teslabox-dev
+   curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
+   unzip -o main.zip
+   cp -r teslabox-main/* teslabox
+   rm -rf teslabox-main
    cd teslabox
    export NPM_CONFIG_UNSAFE_PERM=true
    npm install
@@ -397,10 +397,10 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
      - Download and re-install TeslaBox and packages:
     ```
     cd /root
-    curl -o dev.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/dev
-    unzip -o dev.zip
-    cp -r teslabox-dev/* teslabox
-    rm -rf teslabox-dev
+    curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
+    unzip -o main.zip
+    cp -r teslabox-main/* teslabox
+    rm -rf teslabox-main
     cd teslabox
     export NPM_CONFIG_UNSAFE_PERM=true
     npm install
