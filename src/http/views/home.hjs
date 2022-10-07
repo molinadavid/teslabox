@@ -77,18 +77,6 @@
         <input type="text" class="form-control" id="streamAngles" name="streamAngles" value="{{streamAngles}}">
         <label for="streamAngles">Stream angles</label>
       </div>
-      <div class="form-check form-switch mt-3">
-        <input class="form-check-input" id="copy" name="copy" type="checkbox" role="switch"{{#copy}} checked{{/copy}}>
-        <label class="form-check-label" for="copy">Copy <sup style="color:red;text-transform:uppercase"></sup></label>
-      </div>
-      <div class="form-floating mt-2 mb-2">
-        <input type="text" class="form-control" id="copyAngles" name="copyAngles" value="{{copyAngles}}">
-        <label for="copyAngles">Copy angles</label>
-      </div>
-      <div class="form-floating mt-2 mb-2">
-        <input type="text" class="form-control" id="copyFolder" name="copyFolder" value="{{copyFolder}}">
-        <label for="copyFolder">Copy folder</label>
-      </div>
       <div class="mt-3">
         <button type="submit" class="btn btn-primary">Update</button>
       </div>

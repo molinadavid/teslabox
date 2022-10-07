@@ -37,23 +37,9 @@ exports.start = (cb) => {
     const isStream = !!config.get('stream')
     const streamAngles = _.compact(_.split(config.get('streamAngles'), ','))
 
-    const isCopy = !!config.get('copy')
-    const copyFolder = config.get('copyFolder')
-    const copyAngles = _.compact(_.split(config.get('copyAngles'), ','))
-    const copyDir = isCopy && copyFolder && copyAngles.length ? path.join(usbDir, copyFolder) : false
-
     async.series([
       (cb) => {
         isProduction ? exec(`mount ${usbDir} &> /dev/null`, cb) : cb()
-      },
-      (cb) => {
-        if (!copyDir) {
-          return cb()
-        }
-
-        fs.mkdir(copyDir, { recursive: true }, (err) => {
-          err?.code === 'EEXIST' ? cb() : cb(err)
-        })
       },
       (cb) => {
         glob(`${usbDir}/TeslaCam/**/+(event.json|*.mp4)`, (err, result) => {
@@ -80,15 +66,6 @@ exports.start = (cb) => {
                   if (isStream && streamAngles.includes(angle) && !stream.isProcessing(angle)) {
                     const destination = path.join(ramDir, 'stream', `${angle}.mp4`)
                     log.debug(`[usb] streaming ${destination}`)
-                    fs.copyFile(row, destination, cb)
-                  } else {
-                    cb()
-                  }
-                },
-                (cb) => {
-                  if (copyDir && copyAngles.includes(angle)) {
-                    const destination = path.join(copyDir, file)
-                    log.debug(`[usb] copying ${destination}`)
                     fs.copyFile(row, destination, cb)
                   } else {
                     cb()
