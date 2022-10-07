@@ -1,3 +1,5 @@
+const log = require('../log')
+
 const AWS = require('aws-sdk')
 
 let client
@@ -8,6 +10,8 @@ const region = process.env.AWS_DEFAULT_REGION
 
 exports.start = (cb) => {
   cb = cb || function () {}
+
+  log.debug('[aws/ses] started')
 
   if (!accessKeyId || !secretAccessKey || !region) {
     log.warn(`[aws/ses] email is disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and/or AWS_DEFAULT_REGION is missing`)

@@ -105,6 +105,8 @@ For paid (priority) support please contact teslabox@payymail.com
   echo hdmi_blanking=2 >> /boot/config.txt
   sed -i 's/fsck.repair=yes/fsck.repair=no/g' /boot/cmdline.txt
   sed -i 's/rootwait/rootwait modules-load=dwc2/g' /boot/cmdline.txt
+  echo 'static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 9.9.9.9 149.112.112.112 208.67.222.222 208.67.220.220' >> /etc/dhcpcd.conf
+
   ```
 10. Add one or more WiFi networks with increasing priority:
   - First, edit your WiFi configuration file:
@@ -135,7 +137,7 @@ For paid (priority) support please contact teslabox@payymail.com
      id_str="hotspot"
    }
   ```
-11. Allocate USB space with all available storage (minus 10GB):
+11. Allocate USB space with all available storage (minus 10GB, or more if you plan on using TeslaMate):
    ```
    size="$(($(df -B1G --output=avail / | tail -1) - 10))"
    fallocate -l "$size"G /usb.bin
@@ -254,9 +256,6 @@ For paid (priority) support please contact teslabox@payymail.com
          - ./import:/opt/app/import
        cap_drop:
          - all
-       dns:
-         - 8.8.8.8
-         - 8.8.4.4
 
      database:
        image: postgres:14
@@ -292,6 +291,9 @@ For paid (priority) support please contact teslabox@payymail.com
        volumes:
          - mosquitto-conf:/mosquitto/config
          - mosquitto-data:/mosquitto/data
+
+   networks:
+     host:
 
    volumes:
      teslamate-db:

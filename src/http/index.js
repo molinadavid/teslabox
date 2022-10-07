@@ -1,3 +1,4 @@
+const log = require('../log')
 const controllers = require('./controllers')
 const routes = require('./routes')
 
@@ -11,10 +12,12 @@ const timeout = 60
 
 let server
 
-const adminPort = process.env.ADMIN_PORT ? parseInt(process.env.ADMIN_PORT, 10) : 80
+const adminPort = process.env.ADMIN_PORT ? Number(process.env.ADMIN_PORT) : 80
 
 exports.start = (cb) => {
   cb = cb || function () {}
+
+  log.debug('[http] started')
 
   const app = express()
   app.disable('x-powered-by')

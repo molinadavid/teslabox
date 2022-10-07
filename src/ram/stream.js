@@ -15,11 +15,13 @@ const streams = {}
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  async.forever((next) => {
-    const isStream = config.get('stream')
-    const streamAngles = _.split(config.get('streamAngles'), ',')
+  log.debug('[ram/stream] started')
 
-    if (!isStream) {
+  async.forever((next) => {
+    const isStream = !!config.get('stream')
+    const streamAngles = _.compact(_.split(config.get('streamAngles'), ','))
+
+    if (!isStream || !streamAngles.length) {
       return setTimeout(next, interval)
     }
 
@@ -31,7 +33,10 @@ exports.start = (cb) => {
         const ctime = String(_.get(result, 'ctime', ''))
 
         if (ctime && _.get(streams, `${angle}.ctime`) !== ctime) {
+          _.set(streams, [angle, 'isProcessing'], true)
+
           exec(`ffmpeg -hide_banner -loglevel error -y -i ${file} -vf scale=320:240 -r 24 -an ${tempFile} && mv ${tempFile} ${ramDir}/stream/out/${angle}.mp4`, (err) => {
+            streams[angle].isProcessing = false
             if (err) {
               log.warn(`[ram/stream] failed: ${err}`)
             } else {
@@ -70,3 +75,8 @@ exports.start = (cb) => {
 exports.list = () => {
   return streams
 }
+
+exports.isProcessing = (angle) => {
+  return _.get(streams, [angle, 'isProcessing'])
+}
+

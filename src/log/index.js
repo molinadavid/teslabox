@@ -28,6 +28,8 @@ const log = (level, message) => {
 exports.start = (cb) => {
   cb = cb || function () {}
 
+  exports.debug('[log] started')
+
   cb()
 }
 

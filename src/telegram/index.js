@@ -12,6 +12,8 @@ const accessToken = process.env.TELEGRAM_ACCESS_TOKEN
 exports.start = (cb) => {
   cb = cb || function () {}
 
+  log.debug('[telegram] started')
+
   if (!accessToken) {
     log.warn('[telegram] notifications disabled because TELEGRAM_ACCESS_TOKEN is missing')
     return cb()

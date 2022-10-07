@@ -24,8 +24,10 @@ const archives = []
 exports.start = (cb) => {
   cb = cb || function () {}
 
+  log.debug('[ram/archive] started')
+
   async.forever((next) => {
-    const isArchive = config.get('archive')
+    const isArchive = !!config.get('archive')
     if (!isArchive) {
       return setTimeout(next, interval)
     }
@@ -38,9 +40,9 @@ exports.start = (cb) => {
       const carName = config.get('carName')
       const archiveQuality = config.get('archiveQuality').toUpperCase()
       const archiveCompression = config.get('archiveCompression')
-      const archiveSeconds = parseInt(config.get('archiveSeconds'), 10)
-      const emailRecipients = _.split(config.get('emailRecipients'), ',')
-      const telegramRecipients = _.split(config.get('telegramRecipients'), ',')
+      const archiveSeconds = !!config.get('archiveSeconds') ? Number(config.get('archiveSeconds')) : 0
+      const emailRecipients = _.compact(_.split(config.get('emailRecipients'), ','))
+      const telegramRecipients = _.compact(_.split(config.get('telegramRecipients'), ','))
 
       async.eachSeries(result, (row, cb) => {
         const parts = row.split(/[\\/]/)
@@ -73,6 +75,8 @@ exports.start = (cb) => {
             silentDestination = destination.replace('.mp4', `-silent.mp4`)
 
             fs.stat(destination, (err, result) => {
+              log.debug(`[ram/archive] merging ${folder}`)
+
               if (err || !result) {
                 exec(`tesla_dashcam --no-check_for_update --no-notification --exclude_subdirs --temp_dir ${path.join(ramDir, 'temp')} ${event.angle === 'back' ? '--swap_frontrear ' : ''} --layout WIDESCREEN --quality ${archiveQuality} --compression ${archiveCompression} --sentry_start_offset=-${Math.ceil(archiveSeconds / 2)} --sentry_end_offset=${archiveSeconds - Math.ceil(archiveSeconds / 2)} --start_offset=-${archiveSeconds} ${row.replace('event.json', '')} --timestamp_format="TeslaBox ${_.upperFirst(event.type)} %Y-%m-%d %X" --output ${destination}`, cb)
               } else {
@@ -81,7 +85,8 @@ exports.start = (cb) => {
             })
           },
           (cb) => {
-            // add silent audio to make telegram video player consistent (thanks https://github.com/genadyo)
+            log.debug(`[ram/archive] silencing ${folder}`)
+
             exec(`ffmpeg -hide_banner -loglevel error -y -i ${destination} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${silentDestination}`, cb)
           },
           (cb) => {
@@ -89,10 +94,14 @@ exports.start = (cb) => {
               return cb()
             }
 
+            log.debug(`[ram/archive] reading ${folder}`)
+
             fs.readFile(silentDestination, (err, result) => {
               if (err) {
                 return cb(err)
               }
+
+              log.debug(`[ram/archive] uploading ${folder}`)
 
               const key = `${process.env.AWS_ACCESS_KEY_ID}/archive/${folder}/${event.type}.mp4`
               let url
@@ -114,6 +123,7 @@ exports.start = (cb) => {
                   })
                 },
                 (cb) => {
+                  log.debug(`[ram/archive] notifying ${folder}`)
 
                   async.parallel([
                     (cb) => {
@@ -133,6 +143,8 @@ exports.start = (cb) => {
                       ses.sendEmail(emailRecipients, subject, text, html, (err) => {
                         if (err) {
                           log.warn(`[ram/archive] email failed: ${err}`)
+                        } else {
+                          log.debug(`[ram/archive] emailed ${folder}`)
                         }
 
                         cb()
@@ -147,6 +159,8 @@ exports.start = (cb) => {
                       telegram.sendVideo(telegramRecipients, url, message, true, (err) => {
                         if (err) {
                           log.warn(`[ram/archive] telegram failed: ${err}`)
+                        } else {
+                          log.debug(`[ram/archive] telegramed ${folder}`)
                         }
 
                         cb()
@@ -177,9 +191,13 @@ exports.start = (cb) => {
           }
         ], (err) => {
           if (err || _.find(archives, { folder })) {
+            log.debug(`[ram/archive] deleting ${folder}`)
+
             fs.rm(path.join(ramDir, 'archive', folder), { recursive: true }, (err) => {
               if (err) {
                 log.warn(`[ram/archive] delete failed: ${err}`)
+              } else {
+                log.debug(`[ram/archive] deleted ${folder}`)
               }
 
               cb()

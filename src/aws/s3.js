@@ -1,3 +1,5 @@
+const log = require('../log')
+
 const AWS = require('aws-sdk')
 
 let client
@@ -9,6 +11,8 @@ const bucket = process.env.AWS_S3_BUCKET
 
 exports.start = (cb) => {
   cb = cb || function () {}
+
+  log.debug('[aws/s3] started')
 
   if (!accessKeyId || !secretAccessKey || !region || !bucket) {
     log.warn(`[aws/s3] archive is disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION and/or AWS_S3_BUCKET is missing`)

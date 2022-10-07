@@ -5,7 +5,7 @@ const package = require('../../../package.json')
 const _ = require('lodash')
 
 const split = (str) => {
-  return _.join(_.split(str, /[\r\n, ]+/), ',')
+  return _.join(_.split(str.toLowerCase(), /[\r\n, ]+/), ',')
 }
 
 module.exports = (req, res, next) => {
@@ -17,10 +17,12 @@ module.exports = (req, res, next) => {
     config.set('archiveQuality', req.body.archiveQuality || 'lowest')
     config.set('archiveCompression', req.body.archiveCompression || 'superfast')
     config.set('archiveDays', req.body.archiveDays)
-    config.set('emailRecipients', split(req.body.emailRecipients))
+    config.set('emailRecipients', _.split(req.body.emailRecipients))
     config.set('telegramRecipients', split(req.body.telegramRecipients))
     config.set('stream', req.body.stream === 'on')
     config.set('streamAngles', req.body.streamAngles ? split(req.body.streamAngles) : 'front')
+    config.set('copy', req.body.copy === 'on')
+    config.set('copyFolder', req.body.copyFolder || '')
 
     res.location('/')
     return next()
@@ -57,6 +59,8 @@ module.exports = (req, res, next) => {
     telegramRecipients: config.get('telegramRecipients'),
     stream: !!config.get('stream'),
     streamAngles: config.get('streamAngles'),
+    copy: !!config.get('copy'),
+    copyFolder: config.get('copyFolder'),
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),
