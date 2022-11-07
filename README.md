@@ -203,7 +203,8 @@ For paid (priority) support please contact teslabox@payymail.com
 
   Type=simple
   User=root
-  ExecStart=/usr/bin/node /root/teslabox/src/index.js
+  WorkingDirectory=/root/teslabox
+  ExecStart=/usr/bin/node src/index.js
   Restart=on-failure
   RestartSec=5
   StandardOutput=syslog
