@@ -1,6 +1,5 @@
 const log = require('../log')
 const config = require('../config')
-const controllers = require('../http/controllers')
 const queue = require('../queue')
 
 const _ = require('lodash')
