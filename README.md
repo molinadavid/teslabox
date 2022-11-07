@@ -3,7 +3,7 @@ Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
 Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events via email (or Telegram, along with a copy of each clip) and allows remote streaming while parked or driving!
 
-Starting from version 0.4.0, TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
+TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/teslamate)
 
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
@@ -105,7 +105,7 @@ For paid (priority) support please contact teslabox@payymail.com
   echo hdmi_blanking=2 >> /boot/config.txt
   sed -i 's/fsck.repair=yes/fsck.repair=no/g' /boot/cmdline.txt
   sed -i 's/rootwait/rootwait modules-load=dwc2/g' /boot/cmdline.txt
-  echo 'static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 9.9.9.9 149.112.112.112 208.67.222.222 208.67.220.220' >> /etc/dhcpcd.conf
+  echo 'static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 9.9.9.9 149.112.112.112' >> /etc/dhcpcd.conf
 
   ```
 10. Add one or more WiFi networks with increasing priority:
@@ -113,7 +113,7 @@ For paid (priority) support please contact teslabox@payymail.com
   ```
   nano /etc/wpa_supplicant/wpa_supplicant.conf
   ```
-  - If you want TeslaBox to prefer your home network, then your USB access point, then your mobile hotspot,  configuration should be:
+  - If you want TeslaBox to prefer your home network, then your USB access point, then your mobile hotspot, configuration should be:
 
   ```
    network={
@@ -142,21 +142,20 @@ For paid (priority) support please contact teslabox@payymail.com
    size="$(($(df -B1G --output=avail / | tail -1) - 10))"
    fallocate -l "$size"G /usb.bin
    mkdosfs /usb.bin -F 32 -I
-   echo "/usb.bin /mnt/usb vfat defaults 0 0" >> /etc/fstab
+   echo "/usb.bin /mnt/usb vfat auto,noexec,nouser,ro,sync 0 0" >> /etc/fstab
    echo "options g_mass_storage file=/usb.bin removable=1 ro=0 stall=0 iSerialNumber=123456" > /etc/modprobe.d/g_mass_storage.conf
    ```
-12. Allocate RAM drive with 50% of available memory:
+12. Allocate RAM drive with 80% of available memory:
    ```
-   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=50% 0 0" >> /etc/fstab
+   echo "tmpfs /mnt/ram tmpfs nodev,nosuid,size=80% 0 0" >> /etc/fstab
    ```
 13. Update system packages, upgrade and install required software:
    ```
    curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
    apt update && apt upgrade -y
-   apt install -y nodejs python3-pip ffmpeg fonts-freefont-ttf
-   pip install tesla_dashcam
+   apt install -y nodejs ffmpeg
    sed -i 's/exit 0//g' /etc/rc.local
-   echo "/usr/sbin/modprobe g_mass_storage >> /var/log/teslabox.log 2>&1" >> /etc/rc.local
+   echo "/usr/sbin/modprobe g_mass_storage >> /var/log/syslog 2>&1" >> /etc/rc.local
    echo "exit 0" >> /etc/rc.local
    ```
 14. Install Tailscale and click the authorize link to add this machine to your network
@@ -207,6 +206,9 @@ For paid (priority) support please contact teslabox@payymail.com
   ExecStart=/usr/bin/node /root/teslabox/src/index.js
   Restart=on-failure
   RestartSec=5
+  StandardOutput=syslog
+  StandardError=syslog
+  SyslogIdentifier=teslabox
 
   [Install]
   WantedBy=multi-user.target
@@ -263,8 +265,6 @@ For paid (priority) support please contact teslabox@payymail.com
         - 8.8.4.4
         - 9.9.9.9
         - 149.112.112.112
-        - 208.67.222.222
-        - 208.67.220.220
 
      database:
        image: postgres:14
@@ -318,18 +318,22 @@ For paid (priority) support please contact teslabox@payymail.com
 1. Connect (or Re-connect) TeslaBox to your computer via USB cable and wait for it to appear as drive
 2. Create an empty ```TeslaCam``` under the root folder of the drive
 3. Make sure TeslaBox is connected to your home network via ethernet cable or home WiFi
-4. Browse to the hostname you have setup to edit these settings:
-- Car name (appears next to each notification)
-- Log level (log verbosity. recommended: Warning)
-- Archive (enables archiving)
-- Archive seconds (the longer you set this, the more time and space each clip would take to process. recommended: 30)
-- Archive quality (the higher you set this, the more space each clip would take. recommended: Lowest)
-- Archive compression (the slower you set this, the less space each clip would take, but also the longer it take to process. recommended: Very fast)
-- Archive days (events older than this will automatically get deleted locally. 0 or empty to disable. recommended: 30)
-- Email recipients (comma seperated list of email addresses that should be notified)
-- Telegram recipients (comma seperated list of Telegram Chat IDs that should be notified)
-- Stream (enables streaming)
-- Stream angles (comma seperated list of angles that should be streamed. possibly: front, right, back, left)
+4. Browse to the hostname you have setup to change this settings if needed:
+- Car name (associates with each upload and notification. Default: My Tesla)
+- Log level (log verbosity. Default: Warn)
+- Email recipients (comma seperated list of email addresses to notify)
+- Telegram recipients (comma seperated list of Telegram Chat IDs to notify)
+- Create dashcam clips (processes dashcam/track events. Default: enabled)
+- Quality (the higher you set this, the more space each clip would take. Default: Low)
+- Duration (the longer you set this, the more time and space each clip would take. Default: 30)
+- Create sentry clips (processes sentry events. Default: enabled)
+- Send early warning (notifies you immediately of sentry event, even before clip has processed. Default: disabled)
+- Quality (the higher you set this, the more space each clip would take. Default: Medium)
+- Duration (the longer you set this, the more time and space each clip would take. Default: 30)
+- Stream (enables streaming. Default: disabled)
+- Copy streams (uploads streams to remote location. Default: disabled)
+- Quality (the higher you set this, the more space each clip would take. Default: High)
+- Stream angles (angles to process. Default: front)
 
 ### Tailscale setup
 1. Under DNS -> Nameservers, note the hostname suffix MagicDNS has generated (something like foo.bar.beta.tailscale.net)
@@ -355,16 +359,16 @@ Settings are explained above under Initial setup and always available at: http:/
 ### Dashcam
 Tesla would recognize the TeslaBox as standard USB. You can click save, honk or use voice commands to capture dashcam clips as you would normally. Just make sure the TeslaBox is connected properly and the "Record/ing" has a Red dot on the car quick-settings screen.
 
-If archive is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a copy fo each clip (along with the event location).
+If dashcam processing is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a copy fo each clip (along with the event location).
 
-The clip would start X seconds prior to the event ("red dot"). X is settable under *Admin > Archive seconds*.
+The clip would start X seconds prior to the event ("red dot"). X is settable under *Admin > Dashcam duration*.
 
 ### Sentry
-If archive is enabled and sentry mode is activated, then similarly to dashcam every clip will be uploaded to S3 and/or notified.
+If sentry processing is enabled and sentry mode is activated in the car, then similarly to dashcam every clip will be uploaded to S3 and notified.
 
-The clip would start X/2 seconds prior to the event ("red dot") and X/2 seconds following the event. X is settable under *Admin > Archive seconds*.
+The clip would start 0.4X seconds prior to the event ("red dot") and 0.6X seconds following the event. X is settable under *Admin > Sentry duration*.
 
-If the event is sensed on the rear, then the back camera is enlarged, otherwise - front. The side cameras are always smaller.
+The camera that sensed the event first will be enlarged compared to the others.
 
 ### Raw footage
 Dashcam and sentry videos are always available through the Dashcam app on your Tesla, or by connecting TeslaBox using USB cable to your computer.
@@ -376,7 +380,7 @@ There is, however, a 1 minute delay for each clip which is the time it takes to 
 
 If sentry mode is disabled or car is asleep, you may not see any new streams.
 
-This feature is automatically disabled when the car goes to sleep or TeslaBox restarts.
+You can also request for each stream to automatically upload to S3.
 
 ## Important considerations
 TeslaBox neither use any Tesla API nor requires any Tesla token. It only replaces your Tesla's standard USB or SSD drive with Micro-SD card on a Raspberry Pi.

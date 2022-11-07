@@ -12,6 +12,9 @@
   "dependencies": {
     "async": "^3.2.2",
     "aws-sdk": "^2.1046.0",
+    "better-queue": "^3.8.12",
+    "chance": "^1.1.9",
+    "check-disk-space": "^3.3.1",
     "compression": "^1.7.4",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
@@ -21,10 +24,8 @@
     "messaging-api-telegram": "^1.1.0",
     "ping": "^0.4.1",
     "promise-to-callback": "^1.0.0",
-    "serve-favicon": "^2.5.0",
     "simple-json-db": "^1.2.3"
   },
-  "devDependencies": {},
   "standard": {
     "ignore": [
       "node_modules/**"
