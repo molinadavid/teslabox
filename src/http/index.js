@@ -1,23 +1,20 @@
-const log = require('../log')
 const controllers = require('./controllers')
-const routes = require('./routes')
 
 const compression = require('compression')
 const express = require('express')
-const favicon = require('serve-favicon')
 const http = require('http')
 const path = require('path')
 
-const timeout = 60
+const settings = {
+  timeout: 60000,
+  port: process.env.ADMIN_PORT ? Number(process.env.ADMIN_PORT) : 80,
+  ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
+}
 
 let server
 
-const adminPort = process.env.ADMIN_PORT ? Number(process.env.ADMIN_PORT) : 80
-
 exports.start = (cb) => {
   cb = cb || function () {}
-
-  log.debug('[http] started')
 
   const app = express()
   app.disable('x-powered-by')
@@ -25,37 +22,31 @@ exports.start = (cb) => {
   app.enable('case sensitive routing')
   app.enable('strict routing')
   app.set('trust proxy', 1)
-
-  app.use(compression({
-    threshold: 100
-  }))
-
-  const isProduction = process.env.NODE_ENV === 'production'
-  const assetsDir = path.join(__dirname, '../assets')
-  const ramDir = isProduction ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
-
-  app.use(favicon(path.join(assetsDir, 'favicon.ico')))
-
-  const params = {
-    fallthrough: false,
-    lastModified: true,
-    etag: true
-  }
-
-  app.use('/assets/', express.static(assetsDir, params))
-  app.use('/ram/', express.static(ramDir, params))
   app.set('views', path.join(__dirname, './views'))
   app.set('view engine', 'hjs')
   app.use(express.urlencoded({ extended: true }))
+  app.use(compression({ threshold: 100 }))
 
-  app.use(routes)
+  const assetsDir = path.join(__dirname, '../assets')
+  const staticParams = {
+    fallthrough: true,
+    lastModified: true,
+    etag: false
+  }
+
+  app.use('/ram/', express.static(settings.ramDir, staticParams))
+  app.get('/archive', controllers.archive)
+  app.get('/stream', controllers.stream)
+  app.get('/log', controllers.log)
+  app.use('/', express.static(assetsDir, staticParams))
+  app.all('/', controllers.home)
   app.use(controllers.response)
   app.use(controllers.error)
 
   server = http.createServer(app)
-  server.timeout = timeout
-  server.keepAliveTimeout = timeout
-  server.listen(adminPort, '0.0.0.0', cb)
+  server.timeout = settings.timeout
+  server.keepAliveTimeout = settings.timeout
+  server.listen(settings.port, '0.0.0.0', cb)
 }
 
 exports.end = (cb) => {

@@ -1,8 +1,6 @@
-const config = require('../../config')
 const log = require('../../log')
 
 const _ = require('lodash')
-const crypto = require('crypto')
 
 exports.home = require('./home')
 exports.log = require('./log')

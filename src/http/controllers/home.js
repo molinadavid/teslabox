@@ -1,73 +1,92 @@
 const config = require('../../config')
 const controllers = require('./')
+const usb = require('../../usb')
 const package = require('../../../package.json')
 
 const _ = require('lodash')
 
-const split = (str) => {
-  return _.join(_.split(str.toLowerCase(), /[\r\n, ]+/), ',')
-}
-
 module.exports = (req, res, next) => {
   if (req.method === 'POST') {
-    config.set('carName', req.body.carName || '')
-    config.set('logLevel', req.body.logLevel || 'debug')
-    config.set('archive', req.body.archive === 'on')
-    config.set('archiveSeconds', req.body.archiveSeconds || 30)
-    config.set('archiveQuality', req.body.archiveQuality || 'lowest')
-    config.set('archiveCompression', req.body.archiveCompression || 'superfast')
-    config.set('archiveDays', req.body.archiveDays)
-    config.set('emailRecipients', _.split(req.body.emailRecipients))
-    config.set('telegramRecipients', split(req.body.telegramRecipients))
+    config.set('carName', req.body.carName)
+    config.set('logLevel', req.body.logLevel)
+    config.set('emailRecipients', req.body.emailRecipients)
+    config.set('telegramRecipients', req.body.telegramRecipients)
+    config.set('dashcam', req.body.dashcam === 'on')
+    config.set('dashcamQuality', req.body.dashcamQuality)
+    config.set('dashcamDuration', req.body.dashcamDuration)
+    config.set('sentry', req.body.sentry === 'on')
+    config.set('sentryEarlyWarning', req.body.sentryEarlyWarning === 'on')
+    config.set('sentryQuality', req.body.sentryQuality)
+    config.set('sentryDuration', req.body.sentryDuration)
     config.set('stream', req.body.stream === 'on')
-    config.set('streamAngles', req.body.streamAngles ? split(req.body.streamAngles) : 'front')
+    config.set('streamCopy', req.body.streamCopy === 'on')
+    config.set('streamQuality', req.body.streamQuality)
+    config.set('streamAngles', req.body.streamAngles)
 
     res.location('/')
     return next()
   }
 
-  const archiveQuality = config.get('archiveQuality')
-  const archiveCompression = config.get('archiveCompression')
   const logLevel = config.get('logLevel')
+  const dashcamQuality = config.get('dashcamQuality')
+  const sentryQuality = config.get('sentryQuality')
+  const streamQuality = config.get('streamQuality')
+  const streamAngles = config.get('streamAngles')
 
   const locals = {
     carName: config.get('carName'),
     logLevelDebug: logLevel === 'debug',
     logLevelInfo: logLevel === 'info',
-    logLevelWarning: logLevel === 'warning',
+    logLevelWarn: logLevel === 'warn',
     logLevelError: logLevel === 'error',
-    archive: !!config.get('archive'),
-    archiveSeconds: config.get('archiveSeconds'),
-    archiveQualityLowest: archiveQuality === 'lowest',
-    archiveQualityLower: archiveQuality === 'lower',
-    archiveQualityLow: archiveQuality === 'low',
-    archiveQualityMedium: archiveQuality === 'medium',
-    archiveQualityHigh: archiveQuality === 'high',
-    archiveCompressionUltrafast: archiveCompression === 'ultrafast',
-    archiveCompressionSuperfast: archiveCompression === 'superfast',
-    archiveCompressionVeryfast: archiveCompression === 'veryfast',
-    archiveCompressionFaster: archiveCompression === 'faster',
-    archiveCompressionFast: archiveCompression === 'fast',
-    archiveCompressionMedium: archiveCompression === 'medium',
-    archiveCompressionSlow: archiveCompression === 'slow',
-    archiveCompressionSlower: archiveCompression === 'slower',
-    archiveCompressionVeryslow: archiveCompression === 'veryslow',
-    archiveDays: config.get('archiveDays'),
-    emailRecipients: config.get('emailRecipients'),
-    telegramRecipients: config.get('telegramRecipients'),
-    stream: !!config.get('stream'),
-    streamAngles: config.get('streamAngles'),
+    logLevelFatal: logLevel === 'fatal',
+    emailRecipients: config.get('emailRecipients').join(', '),
+    telegramRecipients: config.get('telegramRecipients').join(', '),
+    dashcam: config.get('dashcam'),
+    dashcamQualityHighest: dashcamQuality === 'highest',
+    dashcamQualityHigh: dashcamQuality === 'high',
+    dashcamQualityMedium: dashcamQuality === 'medium',
+    dashcamQualityLow: dashcamQuality === 'low',
+    dashcamQualityLowest: dashcamQuality === 'lowest',
+    dashcamDuration: config.get('dashcamDuration'),
+    sentry: config.get('sentry'),
+    sentryEarlyWarning: !!config.get('sentryEarlyWarning'),
+    sentryQualityHighest: sentryQuality === 'highest',
+    sentryQualityHigh: sentryQuality === 'high',
+    sentryQualityMedium: sentryQuality === 'medium',
+    sentryQualityLow: sentryQuality === 'low',
+    sentryQualityLowest: sentryQuality === 'lowest',
+    sentryDuration: config.get('sentryDuration'),
+    stream: config.get('stream'),
+    streamCopy: config.get('streamCopy'),
+    streamQualityHighest: streamQuality === 'highest',
+    streamQualityHigh: streamQuality === 'high',
+    streamQualityMedium: streamQuality === 'medium',
+    streamQualityLow: streamQuality === 'low',
+    streamQualityLowest: streamQuality === 'lowest',
+    streamAnglesFront: streamAngles.includes('front'),
+    streamAnglesRight: streamAngles.includes('right'),
+    streamAnglesBack: streamAngles.includes('back'),
+    streamAnglesLeft: streamAngles.includes('left'),
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),
     version: package.version
   }
 
-  res.render('home', locals, (err, result) => {
-    if (!err) {
-      res.locals.response = result
+  usb.getSpace((err, space) => {
+    if (!err && space) {
+      space.isSuccess = space.status === 'success'
+      space.class = space.status === 'danger' ? 'bg-danger' : space.status === 'warning' ? 'bg-warning text-black' : 'bg-success'
+      locals.space = space
     }
 
-    next(err)
+    res.render('home', locals, (err, result) => {
+      if (!err) {
+        res.locals.response = result
+      }
+
+      next(err)
+    })
   })
 }

@@ -1,5 +1,4 @@
-const config = require('../../config')
-const archive = require('../../ram/archive')
+const archive = require('../../queue/archive')
 const controllers = require('./')
 
 const _ = require('lodash')

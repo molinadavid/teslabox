@@ -1,5 +1,4 @@
-const stream = require('../../ram/stream')
-const controllers = require('./')
+const stream = require('../../queue/stream')
 
 const _ = require('lodash')
 
@@ -7,10 +6,7 @@ module.exports = (req, res, next) => {
   const streams = stream.list()
 
   const locals = {
-    front: _.get(streams, 'front.created', false),
-    back: _.get(streams, 'back.created', false),
-    left: _.get(streams, 'left.created', false),
-    right: _.get(streams, 'right.created', false)
+    streams
   }
 
   if (typeof req.query.json !== 'undefined') {
