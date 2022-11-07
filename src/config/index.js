@@ -1,5 +1,24 @@
+const _ = require('lodash')
 const JSONdb = require('simple-json-db')
 const path = require('path')
+
+const settings = {
+  carName: 'My Tesla',
+  logLevel: 'warn',
+  emailRecipients: [],
+  telegramRecipients: [],
+  dashcam: true,
+  dashcamQuality: 'low',
+  dashcamDuration: 30,
+  sentry: true,
+  sentryEarlyWarning: false,
+  sentryQuality: 'medium',
+  sentryDuration: 30,
+  stream: false,
+  streamCopy: false,
+  streamQuality: 'high',
+  streamAngles: ['front']
+}
 
 let db
 
@@ -8,9 +27,12 @@ exports.start = (cb) => {
 
   db = new JSONdb(path.join(__dirname, '../../config.json'))
 
-  // for performance reasons, disable these features on every run
-  db.set('stream', false)
-  db.set('copy', false)
+  // if never set, use defaults
+  _.forEach(settings, (value, key) => {
+    if (!db.has(key)) {
+      exports.set(key, value)
+    }
+  })
 
   cb()
 }
@@ -20,6 +42,52 @@ exports.get = (key) => {
 }
 
 exports.set = (key, value) => {
+  switch (key) {
+    case 'logLevel':
+      value = ['debug', 'info', 'warn', 'error', 'fatal'].includes(value) ? value : settings[key]
+      break
+
+    case 'emailRecipients':
+    case 'telegramRecipients':
+    case 'streamAngles':
+      value = _.compact(_.isArray(value) ? value : _.split(value.toLowerCase(), /[\r\n, ]+/))
+      if (!value.length) {
+        value = settings[key]
+      }
+      break
+
+    case 'sentryQuality':
+    case 'dashcamQuality':
+    case 'streamQuality':
+      value = ['highest', 'high', 'medium', 'low', 'lowest'].includes(value) ? value : settings[key]
+      break
+
+    case 'sentry':
+    case 'sentryEarlyWarning':
+    case 'dashcam':
+    case 'stream':
+    case 'streamCopy':
+      value = !!value
+      break
+
+    case 'sentryDuration':
+    case 'dashcamDuration':
+      value = Number(value) || settings[key]
+      break
+
+    case 'emailRecipients':
+    case 'telegramRecipients':
+    case 'streamAngles':
+      value = _.compact(_.isArray(value) ? value : _.split(value.toLowerCase(), /[\r\n, ]+/))
+      if (!value.length) {
+        value = settings[key]
+      }
+      break
+
+    default:
+      value = value || settings[key]
+  }
+
   return db.set(key, value)
 }
 

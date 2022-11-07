@@ -5,28 +5,28 @@ const async = require('async')
 const { TelegramClient } = require('messaging-api-telegram')
 const p2c = require('promise-to-callback')
 
-let client
+const settings = {
+  accessToken: process.env.TELEGRAM_ACCESS_TOKEN
+}
 
-const accessToken = process.env.TELEGRAM_ACCESS_TOKEN
+let client
 
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  log.debug('[telegram] started')
-
-  if (!accessToken) {
-    log.warn('[telegram] notifications disabled because TELEGRAM_ACCESS_TOKEN is missing')
+  if (!settings.accessToken) {
+    log.warn('[telegram] disabled because TELEGRAM_ACCESS_TOKEN is missing')
     return cb()
   }
 
   client = new TelegramClient({
-    accessToken
+    accessToken: settings.accessToken
   })
 
   cb()
 }
 
-exports.sendMessage = (recipients, text, isSilent, cb) => {
+exports.sendMessage = (recipients, text, cb) => {
   cb = cb || function () {}
 
   if (!client) {
@@ -34,15 +34,15 @@ exports.sendMessage = (recipients, text, isSilent, cb) => {
   }
 
   const params = {
-    disable_notification: !!isSilent
+    parse_mode: 'Markdown'
   }
 
-  async.each(_.compact(recipients), (recipient, cb) => {
+  async.each(recipients, (recipient, cb) => {
     p2c(client.sendMessage(recipient, text, params))(cb)
   }, cb)
 }
 
-exports.sendVideo = (recipients, videoUrl, caption, isSilent, cb) => {
+exports.sendVideo = (recipients, videoUrl, caption, cb) => {
   cb = cb || function () {}
 
   if (!client) {
@@ -51,12 +51,11 @@ exports.sendVideo = (recipients, videoUrl, caption, isSilent, cb) => {
 
   const params = {
     caption,
-    disable_notification: !!isSilent,
     supports_streaming: true,
     parse_mode: 'Markdown'
   }
 
-  async.each(_.compact(recipients), (recipient, cb) => {
+  async.each(recipients, (recipient, cb) => {
     p2c(client.sendVideo(recipient, videoUrl, params))(cb)
   }, cb)
 }

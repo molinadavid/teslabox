@@ -2,28 +2,28 @@ const log = require('../log')
 
 const AWS = require('aws-sdk')
 
-let client
+const settings = {
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_DEFAULT_REGION
+}
 
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
-const region = process.env.AWS_DEFAULT_REGION
+let client
 
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  log.debug('[aws/ses] started')
-
-  if (!accessKeyId || !secretAccessKey || !region) {
-    log.warn(`[aws/ses] email is disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and/or AWS_DEFAULT_REGION is missing`)
+  if (!settings.accessKeyId || !settings.secretAccessKey || !settings.region) {
+    log.warn(`[aws/ses] client disabled because AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and/or AWS_DEFAULT_REGION is missing`)
     return cb()
   }
 
   client = new AWS.SESV2({
     credentials: {
-      accessKeyId,
-      secretAccessKey
+      accessKeyId: settings.accessKeyId,
+      secretAccessKey: settings.secretAccessKey
     },
-    region
+    region: settings.region
   })
 
   cb()

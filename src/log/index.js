@@ -1,6 +1,10 @@
 const config = require('../config')
 
-const levels = ['debug', 'info', 'warn', 'error']
+const settings = {
+  maxLogs: 100
+}
+
+const levels = ['debug', 'info', 'warn', 'error', 'fatal']
 
 let logs = []
 
@@ -18,17 +22,15 @@ const log = (level, message) => {
     message
   }
 
-  const output = ['warn', 'error'].includes(level) ? 'error' : 'log'
+  const output = ['warn', 'error', 'fatal'].includes(level) ? 'error' : 'log'
   console[output](`${level.toUpperCase()} ${message}`)
 
   logs.push(row)
-  logs = logs.slice(-100)
+  logs = logs.slice(-settings.maxLogs)
 }
 
 exports.start = (cb) => {
   cb = cb || function () {}
-
-  exports.debug('[log] started')
 
   cb()
 }
@@ -47,6 +49,10 @@ exports.warn = (message) => {
 
 exports.error = (message) => {
   log('error', message)
+}
+
+exports.fatal = (message) => {
+  log('fatal', message)
 }
 
 exports.list = () => {
