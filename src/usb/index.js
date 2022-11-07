@@ -1,85 +1,92 @@
 const log = require('../log')
 const config = require('../config')
 const controllers = require('../http/controllers')
-const stream = require('../ram/stream')
+const queue = require('../queue')
 
 const _ = require('lodash')
 const async = require('async')
-const glob = require('glob')
-const fs = require('fs')
-const path = require('path')
+const chance = require('chance').Chance()
+const checkDiskSpace = require('check-disk-space').default
 const { exec } = require('child_process')
+const fs = require('fs')
+const glob = require('glob')
+const path = require('path')
+const p2c = require('promise-to-callback')
 
-const interval = 3000
+const settings = {
+  interval: 3000,
+  usedPercentWarning: 0.7,
+  usedPercentDanger: 0.9,
+  isProduction: process.env.NODE_ENV === 'production',
+  usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
+  ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
+  debugFolder: false
+}
 
 const files = []
 
 exports.start = (cb) => {
   cb = cb || function () {}
 
-  log.debug('[usb] started')
-
-  const isProduction = process.env.NODE_ENV === 'production'
-  const usbDir = isProduction ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb')
-  const ramDir = isProduction ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
-
-  fs.mkdirSync(path.join(ramDir, 'archive'), { recursive: true })
-  fs.mkdirSync(path.join(ramDir, 'temp'), { recursive: true })
-  fs.mkdirSync(path.join(ramDir, 'stream', 'out'), { recursive: true })
-
-  const startFolder = controllers.formatDate().replace(' ', '_').replace(/:/g, '-')
+  const startTimestamp = +new Date()
 
   async.forever((next) => {
-    const isArchive = !!config.get('archive')
-    const archiveClips = !!config.get('archiveSeconds') ? (Math.ceil(config.get('archiveSeconds') / 60) + 1) * 4 : false
-    const archiveDays = !!config.get('archiveDays') ? Number(config.get('archiveDays')) : false
-
-    const isStream = !!config.get('stream')
-    const streamAngles = _.compact(_.split(config.get('streamAngles'), ','))
+    const isDashcam = config.get('dashcam')
+    const dashcamDuration = config.get('dashcamDuration')
+    const isSentry = config.get('sentry')
+    const isSentryEarlyWarning = config.get('sentryEarlyWarning')
+    const sentryDuration = config.get('sentryDuration')
+    const isStream = config.get('stream')
+    const streamAngles = config.get('streamAngles')
 
     async.series([
       (cb) => {
-        isProduction ? exec(`mount ${usbDir} &> /dev/null`, cb) : cb()
+        settings.isProduction ? exec(`mount ${settings.usbDir} &> /dev/null`, cb) : cb()
       },
       (cb) => {
-        glob(`${usbDir}/TeslaCam/**/+(event.json|*.mp4)`, (err, result) => {
+        glob(`${settings.usbDir}/TeslaCam/**/+(event.json|*.mp4)`, (err, currentFiles) => {
           if (err) {
             return cb(err)
           }
 
-          async.eachSeries(result, (row, cb) => {
-            const parts = row.split(/[\\/]/)
-            const file = _.last(parts)
-            const folder = _.nth(parts, -2)
+          async.eachSeries(currentFiles, (currentFile, cb) => {
+            const fileParts = currentFile.split(/[\\/]/)
+            const filename = _.last(fileParts)
+            const angle = filename.includes('-front') ? 'front' : filename.includes('-right') ? 'right' : filename.includes('-back') ? 'back' : filename.includes('-left') ? 'left' : undefined
+            const folder = angle ? filename.split(`-${angle}`)[0] : _.nth(fileParts, -2)
+            const dateParts = folder.split('_')
+            const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
 
-            if (files.includes(row) || file < startFolder) {
+            if (_.find(files, { file: currentFile }) || (timestamp < startTimestamp && !fileParts.includes(settings.debugFolder))) {
               return cb()
             }
 
-            const angle = file.includes('-front') ? 'front' : file.includes('-back') ? 'back' : file.includes('-left') ? 'left' : 'right'
+            async.series([
+              (cb) => {
+                if (fileParts.includes('RecentClips') && isStream && streamAngles.includes(angle)) {
+                  copyTemp(currentFile, (err, tempFile) => {
+                    if (!err) {
+                      log.debug(`[usb] queued stream ${filename}`)
 
-            files.push(row)
+                      queue.stream.push({
+                        id: `stream ${folder}`,
+                        angle,
+                        folder,
+                        file: tempFile
+                      })
+                    }
 
-            if (row.includes('RecentClips') && file.endsWith('.mp4')) {
-              async.series([
-                (cb) => {
-                  if (isStream && streamAngles.includes(angle) && !stream.isProcessing(angle)) {
-                    const destination = path.join(ramDir, 'stream', `${angle}.mp4`)
-                    log.debug(`[usb] streaming ${destination}`)
-                    fs.copyFile(row, destination, cb)
-                  } else {
-                    cb()
-                  }
+                    cb(err)
+                  })
+                } else {
+                  cb()
                 }
-              ], cb)
-            } else if (file === 'event.json') {
-              async.series([
-                (cb) => {
-                  if (!isArchive || !archiveClips) {
-                    return cb()
-                  }
+              },
+              (cb) => {
+                const eventType = currentFile.includes('SentryClips') ? 'sentry' : currentFile.includes('TrackClips') ? 'track' : 'dashcam'
 
-                  fs.readFile(row, (err, result) => {
+                if (filename === 'event.json' && ((eventType !== 'sentry' && isDashcam && dashcamDuration) || (eventType === 'sentry' && isSentry && sentryDuration))) {
+                  fs.readFile(currentFile, (err, eventContents) => {
                     if (err) {
                       return cb(err)
                     }
@@ -87,74 +94,155 @@ exports.start = (cb) => {
                     let event
 
                     try {
-                      event = JSON.parse(result)
+                      event = JSON.parse(eventContents)
+                      event.type = eventType
                     } catch (err) {
                       return cb(err)
                     }
 
-                    event.type = row.includes('SentryClips') ? 'sentry' : row.includes('TrackClips') ? 'track' : 'dashcam'
+                    event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
 
-                    const clips = _.filter(files, (file) => {
-                      return file.includes(folder) && file.endsWith('.mp4')
-                    }).sort().reverse().slice(0, archiveClips)
+                    if (event.type === 'sentry' && isSentryEarlyWarning) {
+                      queue.notify.push({
+                        id: `early ${folder}`,
+                        event,
+                        isSentryEarlyWarning
+                      })
+                    }
 
-                    if (!clips.length) {
+                    const archiveDuration = (eventType === 'sentry' ? sentryDuration : dashcamDuration) * 1000
+                    const startEventTimestamp = event.type === 'sentry' ? +new Date(event.timestamp) - (archiveDuration * 0.4) : +new Date(event.timestamp) - archiveDuration
+                    const endEventTimestamp = event.type === 'sentry' ? +new Date(event.timestamp) + (archiveDuration * 0.6) : +new Date(event.timestamp)
+
+                    const frontFiles = _.orderBy(_.filter(files, (file) => {
+                      return file.angle === 'front' && file.timestamp + 60000 >= startEventTimestamp && file.timestamp < endEventTimestamp
+                    }), 'timestamp', 'desc')
+
+                    if (!frontFiles.length) {
                       return cb()
                     }
 
-                    // event.timestamp is skewed. extract it from clip instead
-                    const arr = _.last(clips[0].split('/')).split(/[-_]/)
-                    event.adjustedTimestamp = `${arr[0]}-${arr[1]}-${arr[2]}T${arr[3]}:${arr[4]}:${arr[5]}`
+                    const chapters = []
+                    let remainingDuration = archiveDuration
 
-                    const destination = path.join(ramDir, 'archive', folder)
+                    async.someSeries(frontFiles, (frontFile, cb) => {
+                      exec(`ffprobe -hide_banner -v quiet -show_entries format=duration -i ${frontFile.file}`, (err, stdout) => {
+                        if (err || !stdout.includes('duration=')) {
+                          return cb()
+                        }
 
-                    async.series([
-                      (cb) => {
-                        fs.mkdir(destination, { recursive: true }, (err) => {
-                          err?.code === 'EEXIST' ? cb() : cb(err)
+                        const fileDuration = stdout.split(/[=\n]/)[2] * 1000
+                        if (!fileDuration) {
+                          return cb()
+                        }
+
+                        const relatedFiles = _.reject(_.filter(files, { timestamp: frontFile.timestamp }), { angle: undefined })
+                        const tempFiles = []
+
+                        async.eachSeries(relatedFiles, (relatedFile, cb) => {
+                          copyTemp(relatedFile.file, (err, tempFile) => {
+                            if (!err) {
+                              tempFiles.push({
+                                file: tempFile,
+                                angle: relatedFile.angle
+                              })
+                            }
+
+                            cb(err)
+                          })
+                        }, (err) => {
+                          const start = frontFile.timestamp > startEventTimestamp ? 0 : startEventTimestamp - frontFile.timestamp
+                          const duration = frontFile.timestamp + fileDuration > endEventTimestamp ? endEventTimestamp - frontFile.timestamp - start : fileDuration
+
+                          chapters.push({
+                            timestamp: frontFile.timestamp,
+                            start,
+                            duration,
+                            files: tempFiles
+                          })
+
+                          remainingDuration -= duration
+
+                          cb(err, remainingDuration <= 0)
                         })
-                      },
-                      (cb) => {
-                        fs.writeFile(path.join(destination, file), JSON.stringify(event), cb)
-                      },
-                      (cb) => {
-                        log.debug(`[usb] archiving ${destination}`)
-                        async.each(clips, (clip, cb) => {
-                          const parts = clip.split(/[\\/]/)
-                          const file = _.last(parts)
-                          fs.copyFile(clip, path.join(destination, file), cb)
-                        }, cb)
+                      })
+                    }, (err) => {
+                      if (!err) {
+                        log.debug(`[usb] queued archive ${event.type} ${folder}`)
+
+                        queue.archive.push({
+                          id: `${event.type} ${folder}`,
+                          folder,
+                          event,
+                          chapters
+                        })
                       }
-                    ], cb)
+
+                      cb(err)
+                    })
                   })
-                },
-                (cb) => {
-                  if (archiveDays && Math.ceil((new Date() - new Date(folder.split('_')[0] + ' ' + folder.split('_')[1].replace(/-/g, ':'))) / 86400000) > archiveDays) {
-                    const _folder = path.join(row, '..')
-                    log.debug(`[usb] deleting ${_folder}`)
-                    fs.rm(_folder, { recursive: true }, cb)
-                  } else {
-                    cb()
-                  }
+                } else {
+                  cb()
                 }
-              ], cb)
-            } else {
-              cb()
-            }
+              }
+            ], (err) => {
+              if (!err) {
+                files.push({
+                  file: currentFile,
+                  timestamp,
+                  folder,
+                  angle
+                })
+              }
+
+              cb(err)
+            })
           }, cb)
         })
       },
       (cb) => {
-        isProduction ? exec(`umount ${usbDir} &> /dev/null`, cb) : cb()
+        settings.isProduction ? exec(`umount ${settings.usbDir} &> /dev/null`, cb) : cb()
       },
     ], (err) => {
       if (err) {
         log.warn(`[usb] failed: ${err}`)
       }
 
-      setTimeout(next, interval)
+      setTimeout(next, settings.interval)
     })
   })
 
   cb()
+}
+
+const copyTemp = (source, cb) => {
+  cb = cb || function () {}
+
+  const destination = path.join(settings.ramDir, `${chance.hash()}.mp4`)
+  fs.copyFile(source, destination, (err) => {
+    cb(err, destination)
+  })
+}
+
+exports.getSpace = (cb) => {
+  cb = cb || function () {}
+
+  p2c(checkDiskSpace(settings.usbDir))((err, space) => {
+    if (!err && space) {
+      space = {
+        total: space.size,
+        free: space.free,
+        used: space.size - space.free,
+        totalGb: Math.round(space.size / 1024 / 1024 / 1024),
+        freeGb: Math.round(space.free / 1024 / 1024 / 1024),
+        usedGb: Math.round((space.size - space.free) / 1024 / 1024 / 1024)
+      }
+
+      space.usedPercent = space.used / space.total
+      space.usedPercentFormatted = Math.ceil(space.usedPercent * 100)
+      space.status = space.usedPercent > settings.usedPercentDanger ? 'danger' : space.usedPercent > settings.usedPercentWarning ? 'warning' : 'success'
+    }
+
+    cb(err, space)
+  })
 }
