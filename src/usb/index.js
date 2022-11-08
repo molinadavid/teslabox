@@ -70,7 +70,7 @@ exports.start = (cb) => {
                       log.debug(`[usb] queued stream ${filename}`)
 
                       queue.stream.push({
-                        id: `stream ${folder}`,
+                        id: `stream ${angle} ${folder}`,
                         angle,
                         folder,
                         file: tempFile
