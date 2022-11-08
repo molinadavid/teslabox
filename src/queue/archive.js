@@ -21,8 +21,8 @@ const settings = {
     low: 33,
     lowest: 36
   },
-  iconFile: path.join(__dirname, '../../assets/favicon.ico'),
-  fontFile: path.join(__dirname, '../../assets/FreeSans.ttf'),
+  iconFile: path.join(__dirname, '../assets/favicon.ico'),
+  fontFile: path.join(__dirname, '../assets/FreeSans.ttf'),
   fontColor: 'white',
   borderColor: 'black',
   signedExpirySeconds: 7 * 24 * 60 * 60,
@@ -64,7 +64,7 @@ exports.start = (cb) => {
         const start = chapter.start / 1000
         const duration = chapter.duration / 1000
 
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -fps_mode vfr -filter_complex "[0]scale=18:18 [icon]; `
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -filter_complex "[0]scale=18:18 [icon]; `
 
         switch (input.event.angle) {
           case 'front':

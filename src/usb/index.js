@@ -56,6 +56,7 @@ exports.start = (cb) => {
             const folder = angle ? filename.split(`-${angle}`)[0] : _.nth(fileParts, -2)
             const dateParts = folder.split('_')
             const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
+            const isRecent = fileParts.includes('RecentClips')
 
             if (timestamp < startTimestamp || _.find(files, { file: currentFile })) {
               return cb()
@@ -63,7 +64,7 @@ exports.start = (cb) => {
 
             async.series([
               (cb) => {
-                if (fileParts.includes('RecentClips') && isStream && streamAngles.includes(angle)) {
+                if (isRecent && isStream && streamAngles.includes(angle)) {
                   copyTemp(currentFile, (err, tempFile) => {
                     if (!err) {
                       log.debug(`[usb] queued stream ${filename}`)
@@ -115,7 +116,7 @@ exports.start = (cb) => {
                     const endEventTimestamp = event.type === 'sentry' ? +new Date(event.timestamp) + (archiveDuration * 0.6) : +new Date(event.timestamp)
 
                     const frontFiles = _.orderBy(_.filter(files, (file) => {
-                      return file.angle === 'front' && file.timestamp + 60000 >= startEventTimestamp && file.timestamp < endEventTimestamp
+                      return file.angle === 'front' && !file.isRecent && file.timestamp + 60000 >= startEventTimestamp && file.timestamp < endEventTimestamp
                     }), 'timestamp', 'desc')
 
                     if (!frontFiles.length) {
@@ -136,7 +137,7 @@ exports.start = (cb) => {
                           return cb()
                         }
 
-                        const relatedFiles = _.reject(_.filter(files, { timestamp: frontFile.timestamp }), { angle: undefined })
+                        const relatedFiles = _.reject(_.filter(files, { timestamp: frontFile.timestamp, isRecent: false }), { angle: undefined })
                         const tempFiles = []
 
                         async.eachSeries(relatedFiles, (relatedFile, cb) => {
@@ -191,7 +192,8 @@ exports.start = (cb) => {
                   file: currentFile,
                   timestamp,
                   folder,
-                  angle
+                  angle,
+                  isRecent
                 })
 
                 if (sentryEarlyWarningNotify) {

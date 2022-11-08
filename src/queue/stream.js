@@ -22,8 +22,8 @@ const settings = {
     low: 28,
     lowest: 32
   },
-  iconFile: path.join(__dirname, '../../assets/favicon.ico'),
-  fontFile: path.join(__dirname, '../../assets/FreeSans.ttf'),
+  iconFile: path.join(__dirname, '../assets/favicon.ico'),
+  fontFile: path.join(__dirname, '../assets/FreeSans.ttf'),
   fontColor: 'white',
   borderColor: 'black',
   concurrent: 1,
@@ -57,7 +57,7 @@ exports.start = (cb) => {
           }
 
           const timestamp = new Date(`${folderParts[0]} ${folderParts[1].replace(/-/g, ':')}`).getTime() / 1000
-          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -fps_mode vfr -filter_complex "[0]scale=w=15:h=15 [icon]; [1]scale=w=${settings.scaleWidth}:h=${settings.scaleHeight},drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=24:y=(h-(text_h)-5):text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=x=6:y=${settings.scaleHeight-19}" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=w=15:h=15 [icon]; [1]scale=w=${settings.scaleWidth}:h=${settings.scaleHeight},drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=24:y=(h-(text_h)-5):text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=x=6:y=${settings.scaleHeight-19}" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
           exec(command, (err) => {
             err ? cb(err) : fs.rm(input.file, cb)
           })
