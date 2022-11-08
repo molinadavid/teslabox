@@ -18,8 +18,7 @@ const settings = {
   usedPercentDanger: 0.9,
   isProduction: process.env.NODE_ENV === 'production',
   usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
-  ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
-  debugFolder: false
+  ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 }
 
 const files = []
@@ -37,6 +36,8 @@ exports.start = (cb) => {
     const sentryDuration = config.get('sentryDuration')
     const isStream = config.get('stream')
     const streamAngles = config.get('streamAngles')
+
+    let sentryEarlyWarningNotify
 
     async.series([
       (cb) => {
@@ -56,7 +57,7 @@ exports.start = (cb) => {
             const dateParts = folder.split('_')
             const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
 
-            if (_.find(files, { file: currentFile }) || (timestamp < startTimestamp && !fileParts.includes(settings.debugFolder))) {
+            if (timestamp < startTimestamp || _.find(files, { file: currentFile })) {
               return cb()
             }
 
@@ -102,11 +103,11 @@ exports.start = (cb) => {
                     event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
 
                     if (event.type === 'sentry' && isSentryEarlyWarning) {
-                      queue.notify.push({
+                      sentryEarlyWarningNotify = {
                         id: `early ${folder}`,
                         event,
                         isSentryEarlyWarning
-                      })
+                      }
                     }
 
                     const archiveDuration = (eventType === 'sentry' ? sentryDuration : dashcamDuration) * 1000
@@ -192,6 +193,10 @@ exports.start = (cb) => {
                   folder,
                   angle
                 })
+
+                if (sentryEarlyWarningNotify) {
+                  queue.notify.push(sentryEarlyWarningNotify)
+                }
               }
 
               cb(err)
