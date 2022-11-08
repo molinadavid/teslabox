@@ -203,13 +203,9 @@ For paid (priority) support please contact teslabox@payymail.com
 
   Type=simple
   User=root
-  WorkingDirectory=/root/teslabox
-  ExecStart=/usr/bin/node src/index.js
+  ExecStart=/usr/bin/node /root/teslabox/src/index.js
   Restart=on-failure
   RestartSec=5
-  StandardOutput=syslog
-  StandardError=syslog
-  SyslogIdentifier=teslabox
 
   [Install]
   WantedBy=multi-user.target

@@ -21,8 +21,8 @@ const settings = {
     low: 33,
     lowest: 36
   },
-  iconFile: 'src/assets/favicon.ico',
-  fontFile: 'src/assets/FreeSans.ttf',
+  iconFile: path.join(__dirname, '../../assets/favicon.ico'),
+  fontFile: path.join(__dirname, '../../assets/FreeSans.ttf'),
   fontColor: 'white',
   borderColor: 'black',
   signedExpirySeconds: 7 * 24 * 60 * 60,
