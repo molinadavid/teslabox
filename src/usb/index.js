@@ -274,7 +274,7 @@ const unmount = (cb) => {
     return cb()
   }
 
-  exec(`unmount ${settings.usbDir} &> /dev/null`, () => {
+  exec(`umount ${settings.usbDir} &> /dev/null`, () => {
     isMounted = false
     cb()
   })
