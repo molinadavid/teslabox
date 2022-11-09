@@ -22,7 +22,7 @@ const settings = {
     lowest: 36
   },
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
-  fontFile: path.join(__dirname, '../assets/FreeSans.ttf'),
+  fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
   fontColor: 'white',
   borderColor: 'black',
   signedExpirySeconds: 7 * 24 * 60 * 60,
@@ -64,15 +64,15 @@ exports.start = (cb) => {
         const start = chapter.start / 1000
         const duration = chapter.duration / 1000
 
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -filter_complex "[0]scale=18:18 [icon]; `
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -filter_complex "[0]scale=25:25 [icon]; `
 
         switch (input.event.angle) {
           case 'front':
-            command += `[1]scale=1440:1080,pad=1920:1080 [front]; [2]scale=480:360 [right]; [3]scale=480:360,hflip [back]; [4]scale=480:360 [left]; [front][back] overlay=1440:0 [fb]; [fb][left] overlay=1440:360 [fbl]; [fbl][right] overlay=1440:720`
+            command += `[1]scale=1440:1080,pad=1920:1080 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [front][back] overlay=1440:0 [fb]; [fb][left] overlay=1440:360 [fbl]; [fbl][right] overlay=1440:720`
             break
 
           case 'right':
-            command += `[1]scale=480:360 [front]; [2]scale=1440:1080,pad=1920:1080 [right]; [3]scale=480:360,hflip [back]; [4]scale=480:360 [left]; [right][left] overlay=1440:0 [rl]; [rl][front] overlay=1440:360 [rlf]; [rlf][back] overlay=1440:720`
+            command += `[1]scale=480:360 [front]; [2]scale=1440:1080,pad=1920:1080 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [right][left] overlay=1440:0 [rl]; [rl][front] overlay=1440:360 [rlf]; [rlf][back] overlay=1440:720`
             break
 
           case 'back':
@@ -80,11 +80,11 @@ exports.start = (cb) => {
             break
 
           case 'left':
-            command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=480:360,hflip [back]; [4]scale=1440:1080,pad=1920:1080 [left]; [left][right] overlay=1440:0 [lr]; [lr][front] overlay=1440:360 [lrf]; [lrf][back] overlay=1440:720`
+            command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=1440:1080,pad=1920:1080 [left]; [left][right] overlay=1440:0 [lr]; [lr][front] overlay=1440:360 [lrf]; [lrf][back] overlay=1440:720`
             break
         }
 
-        command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=17:borderw=1:bordercolor=${settings.borderColor}@1.0:x=29:y=1058:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=6:1057" -preset ${settings.preset} -crf ${crf} ${chapter.tempFile}`
+        command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=8:1048" -preset ${settings.preset} -crf ${crf} ${chapter.tempFile}`
 
         log.debug(`[queue/archive] ${input.id} merging: ${command}`)
         exec(command, (err) => {
@@ -185,8 +185,6 @@ exports.start = (cb) => {
         }
       ], (err) => {
         if (!err) {
-          log.info(`[queue/archive] ${input.id} archived`)
-
           archives.push({
             type: input.event.type,
             created: +new Date(input.event.timestamp),
@@ -196,7 +194,7 @@ exports.start = (cb) => {
             url: input.url
           })
 
-          log.debug(`[queue/archive] queued notification ${input.id}`)
+          log.info(`[queue/archive] ${input.id} archived`)
 
           queue.notify.push({
             id: input.id,
@@ -228,6 +226,7 @@ exports.start = (cb) => {
 
 exports.push = (input) => {
   q.push(input)
+  log.debug(`[queue/archive] ${input.id} queued`)
 }
 
 exports.list = () => {

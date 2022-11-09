@@ -1,7 +1,7 @@
 const config = require('../config')
 const log = require('../log')
 const ping = require('../ping')
-const s3 = require('../aws/s3')
+const aws = require('../aws')
 
 const _ = require('lodash')
 const async = require('async')
@@ -12,8 +12,6 @@ const { exec } = require('child_process')
 const Queue = require('better-queue')
 
 const settings = {
-  scaleWidth: 640,
-  scaleHeight: 480,
   preset: 'veryfast',
   qualityCrfs: {
     highest: 18,
@@ -23,7 +21,7 @@ const settings = {
     lowest: 32
   },
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
-  fontFile: path.join(__dirname, '../assets/FreeSans.ttf'),
+  fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
   fontColor: 'white',
   borderColor: 'black',
   concurrent: 1,
@@ -56,8 +54,11 @@ exports.start = (cb) => {
             return cb()
           }
 
-          const timestamp = new Date(`${folderParts[0]} ${folderParts[1].replace(/-/g, ':')}`).getTime() / 1000
-          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=w=15:h=15 [icon]; [1]scale=w=${settings.scaleWidth}:h=${settings.scaleHeight},drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=24:y=(h-(text_h)-5):text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=x=6:y=${settings.scaleHeight-19}" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+          const timestamp = Math.round(input.timestamp / 1000)
+          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=w=15:h=15 [icon]; [1]scale=w=640:h=480,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=x=5:y=462" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+
+          log.debug(`[queue/stream] ${input.id} processing: ${command}`)
+
           exec(command, (err) => {
             err ? cb(err) : fs.rm(input.file, cb)
           })
@@ -83,9 +84,11 @@ exports.start = (cb) => {
             return cb(err)
           }
 
-          const outKey = `${carName}/streams/${folderParts[0]}/${input.folder}-${input.angle}.mp4`
+          outKey = `${carName}/streams/${folderParts[0]}/${input.folder}-${input.angle}.mp4`
 
-          s3.putObject(outKey, fileContents, (err) => {
+          log.debug(`[queue/stream] ${input.id} uploading: ${outKey}`)
+
+          aws.s3.putObject(outKey, fileContents, (err) => {
             err ? cb(err) : fs.rm(input.tempFile, cb)
           })
         })
@@ -117,6 +120,7 @@ exports.start = (cb) => {
 
 exports.push = (input) => {
   q.push(input)
+  log.debug(`[queue/stream] ${input.id} queued`)
 }
 
 exports.list = () => {

@@ -136,6 +136,7 @@ exports.start = (cb) => {
 
 exports.push = (input) => {
   q.push(input)
+  log.debug(`[queue/notify] ${input.id} queued`)
 }
 
 exports.list = () => {
