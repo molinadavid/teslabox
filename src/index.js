@@ -26,23 +26,7 @@ async.series([
     return process.exit(1)
   }
 
-  usb.getSpace((err, result) => {
-    if (err) {
-      log.error(`[main] teslabox failed: ${err}`)
-    } else {
-      const message = `${result.usedPercentFormatted}% used (${result.usedGb} of ${result.totalGb} GB)`
-      log[result.status === 'success' ? 'info' : 'warn'](`[main] teslabox started: ${message}`)
-
-      if (result.status != 'success') {
-        const carName = config.get('carName')
-        const text = `${carName} storage ${result.status}: ${message}`
-        queue.notify.push({
-          id: 'storage',
-          text
-        })
-      }
-    }
-  })
+  log.info(`[main] teslabox started`)
 })
 
 process.on('uncaughtException', (err) => {
