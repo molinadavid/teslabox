@@ -19,7 +19,7 @@ const settings = {
   isProduction: process.env.NODE_ENV === 'production',
   usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
-  debugFolder: '2022-10-27_11-47-20'
+  debugFolder: false
 }
 
 let isMounted
