@@ -54,17 +54,24 @@ exports.start = (cb) => {
         if (!text) {
           text = `Map: <https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}>`
           text += `\nApp: <${settings.appUrl}>`
-          if (input.url) {
-            text += `\nDownload: <${input.url}>`
+          if (input.photoUrl) {
+            text += `\nPhoto: <${input.photoUrl}>`
+          }
+          if (input.videoUrl) {
+            text += `\nVideo: <${input.videoUrl}>`
           }
         }
 
         let html = input.html || input.text || input.subject
         if (!html) {
+          if (input.photoUrl) {
+            html += `<img src="${input.photoUrl}"><br><br>`
+          }
+
           html = `<a href="https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}" target="_blank">Map</a>`
           html += ` | <a href="${settings.appUrl}" target="_blank">App</a>`
-          if (input.url) {
-            html += ` | <a href="${input.url}" target="_blank">Download</a>`
+          if (input.videoUrl) {
+            html += ` | <a href="${input.videoUrl}" target="_blank">Download</a>`
           }
         }
 
@@ -95,10 +102,21 @@ exports.start = (cb) => {
           text += ` | [App](${settings.appUrl})`
         }
 
-        if (input.url) {
-          text += ` | [Download](${input.url})`
+        if (input.photoUrl) {
+          text += ` | [Photo](${input.photoUrl})`
 
-          telegram.sendVideo(telegramRecipients, input.url, text, (err) => {
+          telegram.sendPhoto(telegramRecipients, input.photoUrl, text, (err) => {
+            if (!err) {
+              input.telegramedAt = new Date()
+              log.debug(`[queue/notify] ${input.id} telegramed photo ${telegramRecipients.join(',')}`)
+            }
+
+            cb(err)
+          })
+        } else if (input.videoUrl) {
+          text += ` | [Video](${input.videoUrl})`
+
+          telegram.sendVideo(telegramRecipients, input.videoUrl, text, (err) => {
             if (!err) {
               input.telegramedAt = new Date()
               log.debug(`[queue/notify] ${input.id} telegramed video ${telegramRecipients.join(',')}`)

@@ -31,5 +31,6 @@ async.series([
 
 process.on('uncaughtException', (err) => {
   log.fatal(`[main] uncaught exception: ${err}`)
+  console.error(err)
   process.exit(1)
 })

@@ -49,20 +49,24 @@ exports.start = (cb) => {
     const archiveQuality = config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality')
     const crf = settings.qualityCrfs[archiveQuality]
 
-    async.eachSeries(input.chapters, (chapter, cb) => {
-      chapter.tempFile = chapter.tempFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-      fs.stat(chapter.tempFile, (err, stats) => {
+    const timestamps = _.uniq(_.map(input.tempFiles, 'timestamp')).sort()
+
+    async.eachSeries(timestamps, (timestamp, cb) => {
+      input.files = input.files || {}
+      input.files[timestamp] = input.files[timestamp] || path.join(settings.ramDir, `${chance.hash()}.mp4`)
+      fs.stat(input.files[timestamp], (err, stats) => {
         if (!err && stats) {
           return cb()
         }
 
-        const frontFile = _.find(chapter.files, { angle: 'front' }).file
-        const rightFile = _.find(chapter.files, { angle: 'right' }).file
-        const backFile = _.find(chapter.files, { angle: 'back' }).file
-        const leftFile = _.find(chapter.files, { angle: 'left' }).file
-        const timestamp = Math.round((chapter.timestamp + chapter.start) / 1000)
-        const start = chapter.start / 1000
-        const duration = chapter.duration / 1000
+        const front = _.find(input.tempFiles, { timestamp, angle: 'front' })
+        const frontFile = front.file
+        const timestampSeconds = Math.round((timestamp + front.start) / 1000)
+        const start = front.start / 1000
+        const duration = front.duration / 1000
+        const rightFile = _.find(input.tempFiles, { timestamp, angle: 'right' }).file
+        const backFile = _.find(input.tempFiles, { timestamp, angle: 'back' }).file
+        const leftFile = _.find(input.tempFiles, { timestamp, angle: 'left' }).file
 
         let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -filter_complex "[0]scale=25:25 [icon]; `
 
@@ -84,7 +88,7 @@ exports.start = (cb) => {
             break
         }
 
-        command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=8:1048" -preset ${settings.preset} -crf ${crf} ${chapter.tempFile}`
+        command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestampSeconds}}' [video]; [video][icon]overlay=8:1048" -preset ${settings.preset} -crf ${crf} ${input.files[timestamp]}`
 
         log.debug(`[queue/archive] ${input.id} merging: ${command}`)
         exec(command, (err) => {
@@ -117,9 +121,9 @@ exports.start = (cb) => {
               return cb()
             }
 
-            const contents = _.map(input.chapters, (chapter) => {
-              return `file '${chapter.tempFile}'`
-            }).reverse().join('\n')
+            const contents = _.map(timestamps, (timestamp) => {
+              return `file '${input.files[timestamp]}'`
+            }).join('\n')
 
             fs.writeFile(input.chaptersFile, contents, cb)
           })
@@ -135,7 +139,14 @@ exports.start = (cb) => {
 
             log.debug(`[queue/archive] ${input.id} concating: ${command}`)
             exec(command, (err) => {
-              err ? cb(err) : fs.rm(input.chaptersFile, cb)
+              if (!err) {
+                _.each(_.values(input.files), (file) => {
+                  fs.rm(file, () => {})
+                })
+                fs.rm(input.chaptersFile, () => {})
+              }
+
+              cb(err)
             })
           })
         },
@@ -150,7 +161,11 @@ exports.start = (cb) => {
 
             log.debug(`[queue/archive] ${input.id} silencing: ${command}`)
             exec(command, (err) => {
-              err ? cb(err) : fs.rm(input.concatFile, cb)
+              if (!err) {
+                fs.rm(input.concatFile, () => {})
+              }
+
+              cb(err)
             })
           })
         },
@@ -170,7 +185,11 @@ exports.start = (cb) => {
 
             log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`)
             aws.s3.putObject(input.outKey, fileContents, (err) => {
-              err ? cb(err) : fs.rm(input.outFile, cb)
+              if (!err) {
+                fs.rm(input.outFile, () => {})
+              }
+
+              cb(err)
             })
           })
         },
@@ -187,7 +206,7 @@ exports.start = (cb) => {
         if (!err) {
           archives.push({
             type: input.event.type,
-            created: +new Date(input.event.timestamp),
+            created: input.event.timestamp,
             processed: +new Date(),
             lat: input.event.est_lat,
             lon: input.event.est_lon,
@@ -199,21 +218,21 @@ exports.start = (cb) => {
           queue.notify.push({
             id: input.id,
             event: input.event,
-            url: input.url
+            videoUrl: input.url
           })
         }
 
         // clean up silently
         if (!err || input.retries >= settings.maxRetries) {
+          _.each(input.tempFiles, (file) => {
+            fs.rm(file.file, () => {})
+          })
+          _.each(_.values(input.files), (file) => {
+            fs.rm(file, () => {})
+          })
           fs.rm(input.chaptersFile, () => {})
           fs.rm(input.concatFile, () => {})
           fs.rm(input.outFile, () => {})
-          _.each(input.chapters, (chapter) => {
-            fs.rm(chapter.tempFile, () => {})
-            _.each(['front', 'right', 'back', 'left'], (angle) => {
-              fs.rm(_.find(chapter.files, { angle }).file, () => {})
-            })
-          })
         }
 
         cb(err)

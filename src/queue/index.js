@@ -1,6 +1,7 @@
 const archive = require('./archive')
-const stream = require('./stream')
+const early = require('./early')
 const notify = require('./notify')
+const stream = require('./stream')
 
 const async = require('async')
 
@@ -9,11 +10,14 @@ exports.start = (cb) => {
 
   async.parallel([
     archive.start,
-    stream.start,
-    notify.start
+    early.start,
+    notify.start,
+    stream.start
   ], cb)
 }
 
 exports.archive = archive
-exports.stream = stream
+exports.early = early
 exports.notify = notify
+exports.stream = stream
+
