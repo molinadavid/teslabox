@@ -322,9 +322,9 @@ For paid (priority) support please contact teslabox@payymail.com
 - Telegram recipients (comma seperated list of Telegram Chat IDs to notify)
 - Create dashcam clips (processes dashcam/track events. Default: enabled)
 - Quality (the higher you set this, the more space each clip would take. Default: Low)
-- Duration (the longer you set this, the more time and space each clip would take. Default: 30)
+- Duration (the longer you set this, the more time and space each clip would take. Default: 45)
 - Create sentry clips (processes sentry events. Default: enabled)
-- Send early warning (notifies you immediately of sentry event, even before clip has processed. Default: disabled)
+- Send early warning (notifies you immediately of sentry event + thumbnail, before clip finished processing. Default: disabled)
 - Quality (the higher you set this, the more space each clip would take. Default: Medium)
 - Duration (the longer you set this, the more time and space each clip would take. Default: 30)
 - Stream (enables streaming. Default: disabled)
@@ -358,10 +358,12 @@ Tesla would recognize the TeslaBox as standard USB. You can click save, honk or 
 
 If dashcam processing is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a copy fo each clip (along with the event location).
 
-The clip would start X seconds prior to the event ("red dot"). X is settable under *Admin > Dashcam duration*.
+The clip would start 0.9X seconds prior to the event ("red dot") and 0.1X seconds following the event. X is settable under *Admin > Dashcam duration*.
 
 ### Sentry
 If sentry processing is enabled and sentry mode is activated in the car, then similarly to dashcam every clip will be uploaded to S3 and notified.
+
+If early warning is enabled, then a thumbnail of the event will be uploaded to S3 and notified.
 
 The clip would start 0.4X seconds prior to the event ("red dot") and 0.6X seconds following the event. X is settable under *Admin > Sentry duration*.
 
