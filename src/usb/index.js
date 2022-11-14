@@ -68,7 +68,7 @@ exports.start = (cb) => {
         getSpace((err, space) => {
           if (!err && space?.status !== 'success') {
             const carName = config.get('carName')
-            const text = `${carName} storage ${result.status}: ${space.usedPercentFormatted}% used (${space.usedGb} of ${space.totalGb} GB)`
+            const text = `${carName} storage ${space.status}: ${space.usedPercentFormatted}% used (${space.usedGb} of ${space.totalGb} GB)`
             queue.notify.push({
               id: 'storage',
               text
