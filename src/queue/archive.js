@@ -60,15 +60,20 @@ exports.start = (cb) => {
         }
 
         const front = _.find(input.tempFiles, { timestamp, angle: 'front' })
-        const frontFile = front.file
+        const right = _.find(input.tempFiles, { timestamp, angle: 'right' })
+        const back = _.find(input.tempFiles, { timestamp, angle: 'back' })
+        const left = _.find(input.tempFiles, { timestamp, angle: 'left' })
+
+        if (!front || !right || !back || !left) {
+          const err = 'Missing files'
+          return cb(err)
+        }
+
         const timestampSeconds = Math.round((timestamp + front.start) / 1000)
         const start = front.start / 1000
         const duration = front.duration / 1000
-        const rightFile = _.find(input.tempFiles, { timestamp, angle: 'right' }).file
-        const backFile = _.find(input.tempFiles, { timestamp, angle: 'back' }).file
-        const leftFile = _.find(input.tempFiles, { timestamp, angle: 'left' }).file
 
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${frontFile} -ss ${start} -t ${duration} -i ${rightFile} -ss ${start} -t ${duration} -i ${backFile} -ss ${start} -t ${duration} -i ${leftFile} -filter_complex "[0]scale=25:25 [icon]; `
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${front.file} -ss ${start} -t ${duration} -i ${right.file} -ss ${start} -t ${duration} -i ${back.file} -ss ${start} -t ${duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
 
         switch (input.event.angle) {
           case 'front':
@@ -94,10 +99,10 @@ exports.start = (cb) => {
         exec(command, (err) => {
           if (!err) {
             // clean up silently
-            fs.rm(frontFile, () => {})
-            fs.rm(rightFile, () => {})
-            fs.rm(backFile, () => {})
-            fs.rm(leftFile, () => {})
+            fs.rm(front.file, () => {})
+            fs.rm(right.file, () => {})
+            fs.rm(back.file, () => {})
+            fs.rm(left.file, () => {})
           }
 
           cb(err)
@@ -227,12 +232,22 @@ exports.start = (cb) => {
           _.each(input.tempFiles, (file) => {
             fs.rm(file.file, () => {})
           })
+
           _.each(_.values(input.files), (file) => {
             fs.rm(file, () => {})
           })
-          fs.rm(input.chaptersFile, () => {})
-          fs.rm(input.concatFile, () => {})
-          fs.rm(input.outFile, () => {})
+
+          if (input.chaptersFile) {
+            fs.rm(input.chaptersFile, () => {})
+          }
+
+          if (input.concatFile) {
+            fs.rm(input.concatFile, () => {})
+          }
+
+          if (input.outFile) {
+            fs.rm(input.outFile, () => {})
+          }
         }
 
         cb(err)

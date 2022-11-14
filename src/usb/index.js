@@ -133,7 +133,7 @@ exports.start = (cb) => {
 
               try {
                 event = JSON.parse(eventContents)
-                event.timestamp = new Date(event.timestamp)
+                event.timestamp = +new Date(event.timestamp)
                 event.type = eventType
               } catch (err) {
                 return cb(err)
@@ -142,8 +142,8 @@ exports.start = (cb) => {
               event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
 
               const archiveDuration = (event.type === 'sentry' ? sentryDuration : dashcamDuration) * 1000
-              const startEventTimestamp = event.timestamp - archiveDuration * (event.type === 'sentry' ? .4 : .9)
-              const endEventTimestamp = event.timestamp + archiveDuration * (event.type === 'sentry' ? .6 : .1)
+              const startEventTimestamp = event.timestamp - archiveDuration * (event.type === 'sentry' ? 0.4 : 0.9)
+              const endEventTimestamp = event.timestamp + archiveDuration * (event.type === 'sentry' ? 0.6 : 0.1)
 
               const tempFiles = []
 
@@ -180,7 +180,7 @@ exports.start = (cb) => {
                       })
                     },
                     (cb) => {
-                      if ((event.type !== 'sentry' && isDashcam) || (event.type === 'sentry' && isSentry)) {
+                      if (((event.type !== 'sentry' && isDashcam) || (event.type === 'sentry' && isSentry) && timestamp + fileDuration > startEventTimestamp && timestamp < endEventTimestamp)) {
                         copyTemp(videoFile, (err, tempFile) => {
                           if (!err) {
                             const start = timestamp > startEventTimestamp ? 0 : startEventTimestamp - timestamp
@@ -202,7 +202,7 @@ exports.start = (cb) => {
                       }
                     },
                     (cb) => {
-                      if (event.type === 'sentry' && isSentryEarlyWarning && angle === event.angle && timestamp < event.timestamp && timestamp + fileDuration > event.timestamp) {
+                      if (event.type === 'sentry' && isSentryEarlyWarning && angle === event.angle && timestamp < event.timestamp && timestamp + fileDuration >= event.timestamp) {
                         copyTemp(videoFile, (err, tempFile) => {
                           if (!err) {
                             const start = event.timestamp - timestamp
