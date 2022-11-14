@@ -37,11 +37,15 @@ exports.start = (cb) => {
     const sentryDuration = config.get('sentryDuration')
     const isSentry = config.get('sentry') && sentryDuration
     const isSentryEarlyWarning = config.get('sentryEarlyWarning')
-    const isStream = config.get('stream')
+    const isStream = config.get('stream') || config.get('streamCopy')
     const streamAngles = config.get('streamAngles')
 
     async.series([
       (cb) => {
+        if (isStarted) {
+          return cb()
+        }
+
         glob(`${settings.ramDir}/*`, (err, tempFiles) => {
           if (err) {
             return cb(err)
