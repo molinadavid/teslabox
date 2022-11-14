@@ -9,7 +9,7 @@ const settings = {
   telegramRecipients: [],
   dashcam: true,
   dashcamQuality: 'low',
-  dashcamDuration: 30,
+  dashcamDuration: 45,
   sentry: true,
   sentryEarlyWarning: false,
   sentryQuality: 'medium',
