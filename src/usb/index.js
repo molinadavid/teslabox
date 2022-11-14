@@ -41,6 +41,9 @@ exports.start = (cb) => {
     const streamAngles = config.get('streamAngles')
 
     async.series([
+      (cb) => {
+        exec(`rm ${settings.ramDir}/*`, cb)
+      },
       mount,
       (cb) => {
         if (isStarted) {
