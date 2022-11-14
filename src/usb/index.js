@@ -42,7 +42,17 @@ exports.start = (cb) => {
 
     async.series([
       (cb) => {
-        exec(`rm ${settings.ramDir}/*`, cb)
+        glob(`${settings.ramDir}/*`, (err, tempFiles) => {
+          if (err) {
+            return cb(err)
+          }
+
+          _.each(tempFiles, (tempFile) => {
+            fs.rm(tempFile, () => cb)
+          })
+
+          cb()
+        })
       },
       mount,
       (cb) => {
