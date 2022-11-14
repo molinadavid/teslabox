@@ -14,11 +14,11 @@ const Queue = require('better-queue')
 const settings = {
   preset: 'veryfast',
   qualityCrfs: {
-    highest: 18,
-    high: 20,
-    medium: 24,
-    low: 28,
-    lowest: 32
+    highest: 20,
+    high: 22,
+    medium: 26,
+    low: 30,
+    lowest: 34
   },
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
   fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
@@ -37,8 +37,13 @@ exports.start = (cb) => {
   cb = cb || function () {}
 
   q = new Queue((input, cb) => {
-    const carName = config.get('carName')
+    const isStream = config.get('stream')
     const isStreamCopy = config.get('streamCopy')
+    if (!isStream && !isStreamCopy) {
+      return cb()
+    }
+
+    const carName = config.get('carName')
     const streamQuality = config.get('streamQuality')
     const crf = settings.qualityCrfs[streamQuality]
 
@@ -60,7 +65,11 @@ exports.start = (cb) => {
           log.debug(`[queue/stream] ${input.id} processing: ${command}`)
 
           exec(command, (err) => {
-            err ? cb(err) : fs.rm(input.file, cb)
+            if (!err) {
+              fs.rm(input.file, () => {})
+            }
+
+            cb(err)
           })
         })
       },
