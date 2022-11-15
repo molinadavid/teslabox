@@ -54,30 +54,24 @@ exports.start = (cb) => {
         if (!text) {
           text = `Map: <https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}>`
           text += `\nApp: <${settings.appUrl}>`
-          if (input.photoUrl) {
-            text += `\nPhoto: <${input.photoUrl}>`
-          }
-          if (input.videoUrl) {
-            text += `\nVideo: <${input.videoUrl}>`
-          }
+          if (input.photoUrl) text += `\nPhoto: <${input.photoUrl}>`
+          if (input.shortUrl) text += `\nShort: <${input.shortUrl}>`
+          if (input.videoUrl) text += `\nVideo: <${input.videoUrl}>`
         }
 
         let html = input.html || input.text || input.subject
         if (!html) {
-          if (input.photoUrl) {
-            html += `<img src="${input.photoUrl}"><br><br>`
-          }
+          if (input.photoUrl) html += `<img src="${input.photoUrl}"><br><br>`
+          if (input.shortUrl) html += `<img src="${input.shortUrl}"><br><br>`
 
           html = `<a href="https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}" target="_blank">Map</a>`
           html += ` | <a href="${settings.appUrl}" target="_blank">App</a>`
-          if (input.videoUrl) {
-            html += ` | <a href="${input.videoUrl}" target="_blank">Download</a>`
-          }
+          if (input.videoUrl) html += ` | <a href="${input.videoUrl}" target="_blank">Video</a>`
         }
 
         ses.sendEmail(emailRecipients, subject, text, html, (err) => {
           if (!err) {
-            input.emailedAt = new Date()
+            input.emailedAt = +new Date()
             log.debug(`[queue/notify] ${input.id} emailed ${emailRecipients.join(',')}`)
           }
 
@@ -107,8 +101,20 @@ exports.start = (cb) => {
 
           telegram.sendPhoto(telegramRecipients, input.photoUrl, text, (err) => {
             if (!err) {
-              input.telegramedAt = new Date()
+              input.telegramedAt = +new Date()
               log.debug(`[queue/notify] ${input.id} telegramed photo ${telegramRecipients.join(',')}`)
+            }
+
+            cb(err)
+          })
+        } else if (input.shortUrl) {
+          text += ` | [Short](${input.shortUrl})`
+          if (input.videoUrl) text += ` | [Video](${input.videoUrl})`
+
+          telegram.sendAnimation(telegramRecipients, input.shortUrl, text, (err) => {
+            if (!err) {
+              input.telegramedAt = +new Date()
+              log.debug(`[queue/notify] ${input.id} telegramed short ${telegramRecipients.join(',')}`)
             }
 
             cb(err)
@@ -118,7 +124,7 @@ exports.start = (cb) => {
 
           telegram.sendVideo(telegramRecipients, input.videoUrl, text, (err) => {
             if (!err) {
-              input.telegramedAt = new Date()
+              input.telegramedAt = +new Date()
               log.debug(`[queue/notify] ${input.id} telegramed video ${telegramRecipients.join(',')}`)
             }
 
@@ -127,7 +133,7 @@ exports.start = (cb) => {
         } else {
           telegram.sendMessage(telegramRecipients, text, (err) => {
             if (!err) {
-              input.telegramedAt = new Date()
+              input.telegramedAt = +new Date()
               log.debug(`[queue/notify] ${input.id} telegramed message ${telegramRecipients.join(',')}`)
             }
 

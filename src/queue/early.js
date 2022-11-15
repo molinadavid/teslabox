@@ -13,7 +13,7 @@ const path = require('path')
 const Queue = require('better-queue')
 
 const settings = {
-  slipage: 250,
+  duration: 5,
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
   fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
   fontColor: 'white',
@@ -38,19 +38,23 @@ exports.start = (cb) => {
 
   q = new Queue((input, cb) => {
     const carName = config.get('carName')
+    const isSentry = config.get('sentry')
+
+    const folderParts = input.folder.split('_')
 
     async.series([
       (cb) => {
-        input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.jpg`)
+        input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.gif`)
         fs.stat(input.outFile, (err, stats) => {
           if (!err && stats) {
             return cb()
           }
         })
 
-        const timestampSeconds = Math.round((input.event.timestamp - settings.slipage) / 1000)
-        const start = Math.max(Math.round((input.event.timestamp - input.timestamp - settings.slipage) / 1000), 0)
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -i ${input.file} -filter_complex "[0]scale=25:25 [icon]; [1]scale=1440:1080,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${carName.replace(/'/g, '\\')} Sentry (${_.upperFirst(input.event.angle)}) %{pts\\:localtime\\:${timestampSeconds}}' [image]; [image][icon]overlay=8:1048" -vframes 1 ${input.outFile}`
+        const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
+        const duration = Math.round(settings.duration * 0.6)
+        const timestamp = input.timestamp + start
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} Sentry (${_.upperFirst(input.event.angle)}) %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
 
         log.debug(`[queue/early] ${input.id} processing: ${command}`)
 
@@ -73,8 +77,8 @@ exports.start = (cb) => {
             return cb(err)
           }
 
-          const folderParts = input.folder.split('_')
-          input.outKey = `${carName}/photos/${folderParts[0]}/${input.folder}-${input.event.type}.jpg`
+          input.outKey = `${carName}/shorts/${folderParts[0]}/${input.folder}-${input.event.type}.gif`
+          input.videoKey = `${carName}/archives/${folderParts[0]}/${input.folder}-${input.event.type}.mp4`
 
           log.debug(`[queue/early] ${input.id} uploading: ${input.outKey}`)
           aws.s3.putObject(input.outKey, fileContents, (err) => {
@@ -89,7 +93,20 @@ exports.start = (cb) => {
       (cb) => {
         aws.s3.getSignedUrl(input.outKey, settings.signedExpirySeconds, (err, url) => {
           if (!err) {
-            input.photoUrl = url
+            input.shortUrl = url
+          }
+
+          cb(err)
+        })
+      },
+      (cb) => {
+        if (!isSentry) {
+          return cb()
+        }
+
+        aws.s3.getSignedUrl(input.videoKey, settings.signedExpirySeconds, (err, url) => {
+          if (!err) {
+            input.videoUrl = url
           }
 
           cb(err)
@@ -102,7 +119,8 @@ exports.start = (cb) => {
         queue.notify.push({
           id: input.id,
           event: input.event,
-          photoUrl: input.photoUrl,
+          shortUrl: input.shortUrl,
+          videoUrl: input.videoUrl,
           isSentryEarlyWarning: true
         })
       }

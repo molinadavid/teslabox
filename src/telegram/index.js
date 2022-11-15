@@ -51,12 +51,28 @@ exports.sendPhoto = (recipients, photoUrl, caption, cb) => {
 
   const params = {
     caption,
-    supports_streaming: true,
     parse_mode: 'Markdown'
   }
 
   async.each(recipients, (recipient, cb) => {
     p2c(client.sendPhoto(recipient, photoUrl, params))(cb)
+  }, cb)
+}
+
+exports.sendAnimation = (recipients, animationUrl, caption, cb) => {
+  cb = cb || function () {}
+
+  if (!client) {
+    return cb()
+  }
+
+  const params = {
+    caption,
+    parse_mode: 'Markdown'
+  }
+
+  async.each(recipients, (recipient, cb) => {
+    p2c(client.sendAnimation(recipient, animationUrl, params))(cb)
   }, cb)
 }
 

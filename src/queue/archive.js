@@ -48,6 +48,8 @@ exports.start = (cb) => {
     const carName = config.get('carName')
     const archiveQuality = config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality')
     const crf = settings.qualityCrfs[archiveQuality]
+    const isDashcamNotify = config.get('dashcamNotify')
+    const isSentryNotify = config.get('sentryNotify')
 
     const timestamps = _.uniq(_.map(input.tempFiles, 'timestamp')).sort()
 
@@ -69,11 +71,9 @@ exports.start = (cb) => {
           return cb(err)
         }
 
-        const timestampSeconds = Math.round((timestamp + front.start) / 1000)
-        const start = front.start / 1000
-        const duration = front.duration / 1000
+        const timestampSeconds = timestamp + front.start
 
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${front.file} -ss ${start} -t ${duration} -i ${right.file} -ss ${start} -t ${duration} -i ${back.file} -ss ${start} -t ${duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${front.start} -t ${front.duration} -i ${front.file} -ss ${right.start} -t ${right.duration} -i ${right.file} -ss ${back.start} -t ${back.duration} -i ${back.file} -ss ${left.start} -t ${left.duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
 
         switch (input.event.angle) {
           case 'front':
@@ -211,7 +211,7 @@ exports.start = (cb) => {
         if (!err) {
           archives.push({
             type: input.event.type,
-            created: input.event.timestamp,
+            created: input.event.timestamp * 1000,
             processed: +new Date(),
             lat: input.event.est_lat,
             lon: input.event.est_lon,
@@ -220,11 +220,13 @@ exports.start = (cb) => {
 
           log.info(`[queue/archive] ${input.id} archived`)
 
-          queue.notify.push({
-            id: input.id,
-            event: input.event,
-            videoUrl: input.url
-          })
+          if ((input.event.type !== 'sentry' && isDashcamNotify) || (input.event.type === 'sentry' && isSentryNotify)) {
+            queue.notify.push({
+              id: input.id,
+              event: input.event,
+              videoUrl: input.url
+            })
+          }
         }
 
         // clean up silently

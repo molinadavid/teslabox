@@ -20,6 +20,7 @@ const settings = {
     low: 30,
     lowest: 34
   },
+  fps: 30,
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
   fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
   fontColor: 'white',
@@ -59,8 +60,7 @@ exports.start = (cb) => {
             return cb()
           }
 
-          const timestamp = Math.round(input.timestamp / 1000)
-          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=w=15:h=15 [icon]; [1]scale=w=640:h=480,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${timestamp}}' [video]; [video][icon]overlay=x=5:y=462" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=${settings.fps},scale=640:480,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${input.timestamp}}' [video]; [video][icon]overlay=5:462" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
 
           log.debug(`[queue/stream] ${input.id} processing: ${command}`)
 

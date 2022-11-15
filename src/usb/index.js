@@ -28,7 +28,7 @@ exports.start = (cb) => {
   cb = cb || function () {}
 
   let isStarted
-  const startTimestamp = +new Date()
+  const startTimestamp = Math.round(+new Date() / 1000)
   const files = []
 
   async.forever((next) => {
@@ -79,10 +79,6 @@ exports.start = (cb) => {
         })
       },
       (cb) => {
-        if (!isStream) {
-          return cb()
-        }
-
         glob(`${settings.usbDir}/TeslaCam/RecentClips/*.mp4`, (err, currentFiles) => {
           if (err) {
             return cb(err)
@@ -94,8 +90,8 @@ exports.start = (cb) => {
             const angle = getAngle(filename)
             const folder = filename.split(`-${angle}`)[0]
             const dateParts = folder.split('_')
-            const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
-            if (!angle || !streamAngles.includes(angle) || timestamp < startTimestamp || _.find(files, { type: 'stream', file: currentFile })) {
+            const timestamp = Math.round(+new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`) / 1000)
+            if (timestamp < startTimestamp || _.find(files, { type: 'stream', file: currentFile })) {
               return cb()
             }
 
@@ -103,6 +99,10 @@ exports.start = (cb) => {
               type: 'stream',
               file: currentFile
             })
+
+            if (!isStream || !angle || !streamAngles.includes(angle)) {
+              return cb()
+            }
 
             copyTemp(currentFile, (err, tempFile) => {
               if (!err) {
@@ -130,9 +130,9 @@ exports.start = (cb) => {
             const fileParts = currentFile.split(/[\\/]/)
             const folder = _.nth(fileParts, -2)
             const dateParts = folder.split('_')
-            const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
+            const timestamp = Math.round(+new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`) / 1000)
             const eventType = fileParts.includes('SentryClips') ? 'sentry' : fileParts.includes('TrackClips') ? 'track' : 'dashcam'
-            if ((eventType !== 'sentry' && !isDashcam) || (eventType === 'sentry' && !isSentry && !isSentryEarlyWarning) || (timestamp < startTimestamp && (!settings.debugFolder || folder !== settings.debugFolder)) || _.find(files, { type: eventType, file: currentFile })) {
+            if ((timestamp < startTimestamp && (!settings.debugFolder || folder !== settings.debugFolder)) || _.find(files, { type: eventType, file: currentFile })) {
               return cb()
             }
 
@@ -140,6 +140,10 @@ exports.start = (cb) => {
               type: eventType,
               file: currentFile
             })
+
+            if ((eventType !== 'sentry' && !isDashcam) || (eventType === 'sentry' && !isSentry && !isSentryEarlyWarning)) {
+              return cb()
+            }
 
             fs.readFile(currentFile, (err, eventContents) => {
               if (err) {
@@ -150,7 +154,7 @@ exports.start = (cb) => {
 
               try {
                 event = JSON.parse(eventContents)
-                event.timestamp = +new Date(event.timestamp)
+                event.timestamp = Math.round(+new Date(event.timestamp) / 1000)
                 event.type = eventType
               } catch (err) {
                 return cb(err)
@@ -158,9 +162,9 @@ exports.start = (cb) => {
 
               event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
 
-              const archiveDuration = (event.type === 'sentry' ? sentryDuration : dashcamDuration) * 1000
-              const startEventTimestamp = event.timestamp - archiveDuration * (event.type === 'sentry' ? 0.4 : 0.9)
-              const endEventTimestamp = event.timestamp + archiveDuration * (event.type === 'sentry' ? 0.6 : 0.1)
+              const archiveDuration = event.type === 'sentry' ? sentryDuration : dashcamDuration
+              const startEventTimestamp = event.timestamp - Math.round(archiveDuration * (event.type === 'sentry' ? 0.4 : 0.9))
+              const endEventTimestamp = event.timestamp + Math.round(archiveDuration * (event.type === 'sentry' ? 0.6 : 0.1))
 
               const tempFiles = []
 
@@ -174,9 +178,8 @@ exports.start = (cb) => {
                   const filename = _.last(fileParts)
                   const angle = getAngle(filename)
                   const dateParts = filename.split(`-${angle}`)[0].split('_')
-                  const timestamp = +new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`)
-
-                  if (timestamp + 60000 < startEventTimestamp || timestamp > endEventTimestamp) {
+                  const timestamp = Math.round(+new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`) / 1000)
+                  if (timestamp + 60 < startEventTimestamp || timestamp > endEventTimestamp) {
                     return cb()
                   }
 
@@ -190,33 +193,11 @@ exports.start = (cb) => {
 
                       exec(`ffprobe -hide_banner -v quiet -show_entries format=duration -i ${videoFile}`, (err, stdout) => {
                         if (!err && stdout.includes('duration=')) {
-                          fileDuration = parseFloat(stdout.split('duration=')[1].split('\n')[0]) * 1000
+                          fileDuration = Math.ceil(stdout.split('duration=')[1].split('\n')[0])
                         }
 
                         cb(err)
                       })
-                    },
-                    (cb) => {
-                      if (((event.type !== 'sentry' && isDashcam) || (event.type === 'sentry' && isSentry) && timestamp + fileDuration > startEventTimestamp && timestamp < endEventTimestamp)) {
-                        copyTemp(videoFile, (err, tempFile) => {
-                          if (!err) {
-                            const start = timestamp > startEventTimestamp ? 0 : startEventTimestamp - timestamp
-                            const duration = timestamp + fileDuration > endEventTimestamp ? endEventTimestamp - timestamp - start : fileDuration
-
-                            tempFiles.push({
-                              file: tempFile,
-                              angle,
-                              timestamp,
-                              start,
-                              duration
-                            })
-                          }
-
-                          cb(err)
-                        })
-                      } else {
-                        cb()
-                      }
                     },
                     (cb) => {
                       if (event.type === 'sentry' && isSentryEarlyWarning && angle === event.angle && timestamp < event.timestamp && timestamp + fileDuration >= event.timestamp) {
@@ -231,6 +212,28 @@ exports.start = (cb) => {
                               timestamp,
                               start,
                               file: tempFile
+                            })
+                          }
+
+                          cb(err)
+                        })
+                      } else {
+                        cb()
+                      }
+                    },
+                    (cb) => {
+                      if (((event.type !== 'sentry' && isDashcam) || (event.type === 'sentry' && isSentry) && timestamp + fileDuration > startEventTimestamp && timestamp < endEventTimestamp)) {
+                        copyTemp(videoFile, (err, tempFile) => {
+                          if (!err) {
+                            const start = timestamp > startEventTimestamp ? 0 : startEventTimestamp - timestamp
+                            const duration = timestamp + fileDuration > endEventTimestamp ? endEventTimestamp - timestamp - start : fileDuration
+
+                            tempFiles.push({
+                              file: tempFile,
+                              angle,
+                              timestamp,
+                              start,
+                              duration
                             })
                           }
 
