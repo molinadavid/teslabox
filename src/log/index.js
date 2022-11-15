@@ -1,7 +1,7 @@
 const config = require('../config')
 
 const settings = {
-  maxLogs: 100
+  maxLogs: 1000
 }
 
 const levels = ['debug', 'info', 'warn', 'error', 'fatal']
