@@ -12,9 +12,11 @@ module.exports = (req, res, next) => {
     config.set('emailRecipients', req.body.emailRecipients)
     config.set('telegramRecipients', req.body.telegramRecipients)
     config.set('dashcam', req.body.dashcam === 'on')
+    config.set('dashcamNotify', req.body.dashcamNotify === 'on')
     config.set('dashcamQuality', req.body.dashcamQuality)
     config.set('dashcamDuration', req.body.dashcamDuration)
     config.set('sentry', req.body.sentry === 'on')
+    config.set('sentryNotify', req.body.sentryNotify === 'on')
     config.set('sentryEarlyWarning', req.body.sentryEarlyWarning === 'on')
     config.set('sentryQuality', req.body.sentryQuality)
     config.set('sentryDuration', req.body.sentryDuration)
@@ -43,6 +45,7 @@ module.exports = (req, res, next) => {
     emailRecipients: config.get('emailRecipients').join(', '),
     telegramRecipients: config.get('telegramRecipients').join(', '),
     dashcam: config.get('dashcam'),
+    dashcamNotify: config.get('dashcamNotify'),
     dashcamQualityHighest: dashcamQuality === 'highest',
     dashcamQualityHigh: dashcamQuality === 'high',
     dashcamQualityMedium: dashcamQuality === 'medium',
@@ -50,6 +53,7 @@ module.exports = (req, res, next) => {
     dashcamQualityLowest: dashcamQuality === 'lowest',
     dashcamDuration: config.get('dashcamDuration'),
     sentry: config.get('sentry'),
+    sentryNotify: config.get('sentryNotify'),
     sentryEarlyWarning: !!config.get('sentryEarlyWarning'),
     sentryQualityHighest: sentryQuality === 'highest',
     sentryQualityHigh: sentryQuality === 'high',

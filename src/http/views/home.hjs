@@ -54,6 +54,10 @@
         <input class="form-check-input" id="dashcam" name="dashcam" type="checkbox" role="switch"{{#dashcam}} checked{{/dashcam}}>
         <label class="form-check-label" for="dashcam"><a href="/archive">Create dashcam clips</a></label>
       </div>
+      <div class="form-check form-switch mt-1">
+        <input class="form-check-input" id="dashcamNotify" name="dashcamNotify" type="checkbox" role="switch"{{#dashcamNotify}} checked{{/dashcamNotify}}>
+        <label class="form-check-label" for="dashcamNotify">Send dashcam notifications</label>
+      </div>
       <div class="form-floating mt-2">
         <select class="form-select" id="dashcamQuality" name="dashcamQuality">
           <option></option>
@@ -72,6 +76,10 @@
       <div class="form-check form-switch mt-3 fw-bolder">
         <input class="form-check-input" id="sentry" name="sentry" type="checkbox" role="switch"{{#sentry}} checked{{/sentry}}>
         <label class="form-check-label" for="sentry"><a href="/archive">Create sentry clips</a></label>
+      </div>
+      <div class="form-check form-switch mt-1">
+        <input class="form-check-input" id="sentryNotify" name="sentryNotify" type="checkbox" role="switch"{{#sentryNotify}} checked{{/sentryNotify}}>
+        <label class="form-check-label" for="sentryNotify">Send sentry notifications</label>
       </div>
       <div class="form-check form-switch mt-1">
         <input class="form-check-input" id="sentryEarlyWarning" name="sentryEarlyWarning" type="checkbox" role="switch"{{#sentryEarlyWarning}} checked{{/sentryEarlyWarning}}>
