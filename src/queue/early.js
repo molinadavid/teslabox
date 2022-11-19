@@ -38,7 +38,6 @@ exports.start = (cb) => {
 
   q = new Queue((input, cb) => {
     const carName = config.get('carName')
-    const isSentry = config.get('sentry')
 
     const folderParts = input.folder.split('_')
 
@@ -54,7 +53,7 @@ exports.start = (cb) => {
         const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
         const duration = Math.round(settings.duration * 0.6)
         const timestamp = input.timestamp + start
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} Sentry (${_.upperFirst(input.event.angle)}) %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
 
         log.debug(`[queue/early] ${input.id} processing: ${command}`)
 
@@ -100,10 +99,6 @@ exports.start = (cb) => {
         })
       },
       (cb) => {
-        if (!isSentry) {
-          return cb()
-        }
-
         aws.s3.getSignedUrl(input.videoKey, settings.signedExpirySeconds, (err, url) => {
           if (!err) {
             input.videoUrl = url
@@ -114,18 +109,17 @@ exports.start = (cb) => {
       }
     ], (err) => {
       if (!err) {
-        log.info(`[queue/early] ${input.id} sent`)
+        log.info(`[queue/early] ${input.id} sent after ${+new Date() - input.startAt}ms`)
 
         queue.notify.push({
           id: input.id,
           event: input.event,
           shortUrl: input.shortUrl,
-          videoUrl: input.videoUrl,
-          isSentryEarlyWarning: true
+          videoUrl: input.videoUrl
         })
       }
 
-      // clean up silentlyrs
+      // clean up silently
       if (!err || input.retries >= settings.maxRetries) {
         fs.rm(input.file, () => {})
         fs.rm(input.outFile, () => {})
@@ -139,6 +133,7 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
+  input.startAt = +new Date()
   q.push(input)
   log.debug(`[queue/early] ${input.id} queued`)
 }

@@ -1,7 +1,6 @@
 const config = require('../config')
 const log = require('../log')
 const ping = require('../ping')
-const queue = require('./')
 const aws = require('../aws')
 
 const _ = require('lodash')
@@ -48,8 +47,6 @@ exports.start = (cb) => {
     const carName = config.get('carName')
     const archiveQuality = config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality')
     const crf = settings.qualityCrfs[archiveQuality]
-    const isDashcamNotify = config.get('dashcamNotify')
-    const isSentryNotify = config.get('sentryNotify')
 
     const timestamps = _.uniq(_.map(input.tempFiles, 'timestamp')).sort()
 
@@ -218,15 +215,7 @@ exports.start = (cb) => {
             url: input.url
           })
 
-          log.info(`[queue/archive] ${input.id} archived`)
-
-          if ((input.event.type !== 'sentry' && isDashcamNotify) || (input.event.type === 'sentry' && isSentryNotify)) {
-            queue.notify.push({
-              id: input.id,
-              event: input.event,
-              videoUrl: input.url
-            })
-          }
+          log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startAt}ms`)
         }
 
         // clean up silently
@@ -261,6 +250,7 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
+  input.startAt = +new Date()
   q.push(input)
   log.debug(`[queue/archive] ${input.id} queued`)
 }

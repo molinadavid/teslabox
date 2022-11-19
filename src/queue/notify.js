@@ -42,12 +42,7 @@ exports.start = (cb) => {
         let subject = input.subject || input.text
         if (!subject) {
           subject = `TeslaBox ${carName} ${_.upperFirst(input.event.type)}`
-          if (input.event.type === 'sentry') {
-            subject += ` (${_.upperFirst(input.event.angle)})`
-            if (input.isSentryEarlyWarning) {
-              subject += ' - Early Warning'
-            }
-          }
+          if (input.event.type === 'sentry') subject += ` (${_.upperFirst(input.event.angle)})`
         }
 
         let text = input.text || input.subject
@@ -72,7 +67,7 @@ exports.start = (cb) => {
         ses.sendEmail(emailRecipients, subject, text, html, (err) => {
           if (!err) {
             input.emailedAt = +new Date()
-            log.debug(`[queue/notify] ${input.id} emailed ${emailRecipients.join(',')}`)
+            log.debug(`[queue/notify] ${input.id} emailed ${emailRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
           }
 
           cb(err)
@@ -86,12 +81,7 @@ exports.start = (cb) => {
         let text = input.text || input.subject
         if (!text) {
           text = `${carName} ${_.upperFirst(input.event.type)}`
-          if (input.event.type === 'sentry') {
-            text += ` (${_.upperFirst(input.event.angle)})`
-            if (input.isSentryEarlyWarning) {
-              text += ' - Early Warning'
-            }
-          }
+          if (input.event.type === 'sentry') text += ` (${_.upperFirst(input.event.angle)})`
           text += `\n[Map](https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon})`
           text += ` | [App](${settings.appUrl})`
         }
@@ -102,19 +92,18 @@ exports.start = (cb) => {
           telegram.sendPhoto(telegramRecipients, input.photoUrl, text, (err) => {
             if (!err) {
               input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed photo ${telegramRecipients.join(',')}`)
+              log.debug(`[queue/notify] ${input.id} telegramed photo ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
             }
 
             cb(err)
           })
         } else if (input.shortUrl) {
-          text += ` | [Short](${input.shortUrl})`
           if (input.videoUrl) text += ` | [Video](${input.videoUrl})`
 
           telegram.sendAnimation(telegramRecipients, input.shortUrl, text, (err) => {
             if (!err) {
               input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed short ${telegramRecipients.join(',')}`)
+              log.debug(`[queue/notify] ${input.id} telegramed short ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
             }
 
             cb(err)
@@ -125,7 +114,7 @@ exports.start = (cb) => {
           telegram.sendVideo(telegramRecipients, input.videoUrl, text, (err) => {
             if (!err) {
               input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed video ${telegramRecipients.join(',')}`)
+              log.debug(`[queue/notify] ${input.id} telegramed video ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
             }
 
             cb(err)
@@ -134,7 +123,7 @@ exports.start = (cb) => {
           telegram.sendMessage(telegramRecipients, text, (err) => {
             if (!err) {
               input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed message ${telegramRecipients.join(',')}`)
+              log.debug(`[queue/notify] ${input.id} telegramed message ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
             }
 
             cb(err)
@@ -159,6 +148,7 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
+  input.startAt = +new Date()
   q.push(input)
   log.debug(`[queue/notify] ${input.id} queued`)
 }

@@ -107,7 +107,7 @@ exports.start = (cb) => {
         input.retries = (input.retries || 0) + 1
         log.warn(`[queue/stream] ${input.id} failed (${input.retries} of ${settings.maxRetries} retries): ${err}`)
       } else {
-        log.info(`[queue/stream] ${input.id} streamed`)
+        log.info(`[queue/stream] ${input.id} streamed after ${+new Date() - input.startAt}ms`)
       }
 
       // clean up silently
@@ -128,6 +128,7 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
+  input.startAt = +new Date()
   q.push(input)
   log.debug(`[queue/stream] ${input.id} queued`)
 }
