@@ -131,13 +131,13 @@ exports.start = (cb) => {
           })
         },
         (cb) => {
-          input.concatFile = input.concatFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-          fs.stat(input.concatFile, (err, stats) => {
+          input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
+          fs.stat(input.outFile, (err, stats) => {
             if (!err && stats) {
               return cb()
             }
 
-            const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.concatFile}`
+            const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.outFile}`
 
             log.debug(`[queue/archive] ${input.id} concating: ${command}`)
             exec(command, (err) => {
@@ -146,25 +146,6 @@ exports.start = (cb) => {
                   fs.rm(file, () => {})
                 })
                 fs.rm(input.chaptersFile, () => {})
-              }
-
-              cb(err)
-            })
-          })
-        },
-        (cb) => {
-          input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-          fs.stat(input.outFile, (err, stats) => {
-            if (!err && stats) {
-              return cb()
-            }
-
-            const command = `ffmpeg -y -hide_banner -loglevel error -i ${input.concatFile} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${input.outFile}`
-
-            log.debug(`[queue/archive] ${input.id} silencing: ${command}`)
-            exec(command, (err) => {
-              if (!err) {
-                fs.rm(input.concatFile, () => {})
               }
 
               cb(err)
@@ -230,10 +211,6 @@ exports.start = (cb) => {
 
           if (input.chaptersFile) {
             fs.rm(input.chaptersFile, () => {})
-          }
-
-          if (input.concatFile) {
-            fs.rm(input.concatFile, () => {})
           }
 
           if (input.outFile) {
