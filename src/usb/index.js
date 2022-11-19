@@ -173,14 +173,10 @@ exports.start = (cb) => {
                           return cb()
                         }
 
-                        let fileDuration = (_.find(tempFiles, { timestamp }) || {}).duration
+                        let fileDuration
 
                         async.series([
                           (cb) => {
-                            if (fileDuration) {
-                              return cb()
-                            }
-
                             exec(`ffprobe -hide_banner -v quiet -show_entries format=duration -i ${videoFile}`, (err, stdout) => {
                               if (!err && stdout.includes('duration=')) {
                                 fileDuration = Math.ceil(stdout.split('duration=')[1].split('\n')[0])
