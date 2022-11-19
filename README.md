@@ -8,12 +8,10 @@ TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/tesl
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
 ## Prerequisites
-- Raspberry Pi 4 with at least 4GB of ram
-- Compatible case (Argon cases are *not* recommended)
-- Compatible heat sinks and fan (3V prefered)
-- Micro-SD card with at least 64GB of storage and card reader
-- USB-A to USB-C or USB-C to USB-C (all males) cable
-- Some form of WiFi access (preferably in-car)
+- Raspberry Pi 4 with at least 4GB ram, at least 64GB of storage and a card reader (<a href="https://s.click.aliexpress.com/e/_DDzWCi3">Like this kit</a>)
+- Compatible case with fan (<a href="https://s.click.aliexpress.com/e/_DlGTHll">Like this.</a> Note Argon cases are *not* recommended)
+- Some form of WiFi access, preferably in-car (<a href="https://s.click.aliexpress.com/e/_DlY0zpN">Like this 4G USB dongle</a>)
+- Extra short, all males <a href="https://s.click.aliexpress.com/e/_DCAMi91">USB-A to USB-C</a> or <a href="https://s.click.aliexpress.com/e/_DBMVYjN">USB-C to USB-C</a> cable
 
 ## Optionally:
 - [AWS account](https://aws.amazon.com/)
@@ -320,14 +318,11 @@ For paid (priority) support please contact teslabox@payymail.com
 - Log level (log verbosity. Default: Warn)
 - Email recipients (comma seperated list of email addresses to notify)
 - Telegram recipients (comma seperated list of Telegram Chat IDs to notify)
-- Create dashcam clips (uploads dashcam/track events. Default: Enabled)
-- Send dashcam notifications (notifies of dashcam/track events. Default: Enabled)
-- Quality (the higher you set this, the more space each clip would take. Default: Low)
-- Duration (the longer you set this, the more time and space each clip would take. Default: 45)
-- Create sentry clips (processes sentry events. Default: Enabled)
-- Send sentry notifications (notifies of sentry events. Default: Disabled)
-- Send early warning (notifies immediately of sentry events with a short clip. Default: Enabled)
+- Create dashcam clips (uploads and notifies of dashcam/track events. Default: Enabled)
 - Quality (the higher you set this, the more space each clip would take. Default: Medium)
+- Duration (the longer you set this, the more time and space each clip would take. Default: 45)
+- Create sentry clips (uploads and notifies of sentry events. Default: Enabled)
+- Quality (the higher you set this, the more space each clip would take. Default: High)
 - Duration (the longer you set this, the more time and space each clip would take. Default: 30)
 - Stream (enables streaming. Default: Disabled)
 - Copy streams (uploads streams to remote location. Default: Disabled)
@@ -358,14 +353,12 @@ Settings are explained above under Initial setup and always available at: http:/
 ### Dashcam
 Tesla would recognize the TeslaBox as standard USB. You can click save, honk or use voice commands to capture dashcam clips as you would normally. Just make sure the TeslaBox is connected properly and the "Record/ing" has a Red dot on the car quick-settings screen.
 
-If dashcam processing is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a copy fo each clip (along with the event location).
+If dashcam processing is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a quick preview and a link to both the event location map and the full video.
 
 The clip would start 0.9X seconds prior to the event ("red dot") and 0.1X seconds following the event. X is settable under *Admin > Dashcam duration*.
 
 ### Sentry
-If sentry processing is enabled and sentry mode is activated in the car, then similarly to dashcam every clip will be uploaded to S3 and notified.
-
-If early warning is enabled, then a thumbnail of the event will be uploaded to S3 and notified.
+If sentry processing is enabled and sentry mode is activated in the car, then similarly to dashcam each event will be uploaded to S3 and notified.
 
 The clip would start 0.4X seconds prior to the event ("red dot") and 0.6X seconds following the event. X is settable under *Admin > Sentry duration*.
 
@@ -375,7 +368,7 @@ The camera that sensed the event first will be enlarged compared to the others.
 Dashcam and sentry videos are always available through the Dashcam app on your Tesla, or by connecting TeslaBox using USB cable to your computer.
 
 ### Stream
-This is similar to Tesla's Sentry Mode Live Camera feature but works even on drive plus available on any browser. To some extent, you can use it as a security camera.
+This is similar to Tesla's Live Sentry, but has no time limit, can stream while driving plus available on any browser. To some extent, you can use it as a security camera.
 
 There is, however, a 1 minute delay for each clip which is the time it takes to close and prepare the file. You can choose what angles to stream and switch between them. Video would automatically progress to the next minute when it is done playing.
 
