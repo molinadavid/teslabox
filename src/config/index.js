@@ -8,13 +8,10 @@ const settings = {
   emailRecipients: [],
   telegramRecipients: [],
   dashcam: true,
-  dashcamNotify: true,
-  dashcamQuality: 'low',
+  dashcamQuality: 'medium',
   dashcamDuration: 45,
   sentry: true,
-  sentryNotify: false,
-  sentryEarlyWarning: true,
-  sentryQuality: 'medium',
+  sentryQuality: 'high',
   sentryDuration: 30,
   stream: false,
   streamCopy: false,
@@ -65,10 +62,7 @@ exports.set = (key, value) => {
       break
 
     case 'dashcam':
-    case 'dashcamNotify':
     case 'sentry':
-    case 'sentryNotify':
-    case 'sentryEarlyWarning':
     case 'stream':
     case 'streamCopy':
       value = !!value
