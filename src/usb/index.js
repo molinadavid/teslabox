@@ -336,5 +336,5 @@ const getSpace = (cb) => {
 }
 
 exports.getLastSpace = () => {
-  return lastSpace
+  return lastSpace || {}
 }
