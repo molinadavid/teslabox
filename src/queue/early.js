@@ -48,21 +48,21 @@ exports.start = (cb) => {
           if (!err && stats) {
             return cb()
           }
-        })
 
-        const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
-        const duration = Math.round(settings.duration * 0.6)
-        const timestamp = input.timestamp + start
-        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
+          const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
+          const duration = Math.round(settings.duration * 0.6)
+          const timestamp = input.timestamp + start
+          let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
 
-        log.debug(`[queue/early] ${input.id} processing: ${command}`)
+          log.debug(`[queue/early] ${input.id} processing: ${command}`)
 
-        exec(command, (err) => {
-          if (!err) {
-            fs.rm(input.file, () => {})
-          }
+          exec(command, (err) => {
+            if (!err) {
+              fs.rm(input.file, () => {})
+            }
 
-          cb(err)
+            cb(err)
+          })
         })
       },
       (cb) => {
