@@ -48,7 +48,7 @@ exports.start = (cb) => {
     const crf = settings.qualityCrfs[streamQuality]
 
     const folderParts = input.folder.split('_')
-    const outFile = path.join(settings.ramDir, `${input.angle}-${streamQuality}.mp4`)
+    const outFile = path.join(settings.ramDir, `${input.angle}.mp4`)
 
     input.tempFile = input.tempFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
 
