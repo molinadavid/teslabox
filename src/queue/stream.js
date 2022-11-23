@@ -14,13 +14,12 @@ const Queue = require('better-queue')
 const settings = {
   preset: 'veryfast',
   qualityCrfs: {
-    highest: 20,
-    high: 22,
+    highest: 21,
+    high: 23,
     medium: 26,
-    low: 30,
-    lowest: 34
+    low: 28,
+    lowest: 30
   },
-  fps: 30,
   iconFile: path.join(__dirname, '../assets/favicon.ico'),
   fontFile: process.env.NODE_ENV === 'production' ? path.join(__dirname, '../assets/FreeSans.ttf') : 'src/assets/FreeSans.ttf',
   fontColor: 'white',
@@ -49,7 +48,7 @@ exports.start = (cb) => {
     const crf = settings.qualityCrfs[streamQuality]
 
     const folderParts = input.folder.split('_')
-    const outFile = path.join(settings.ramDir, `${input.angle}.mp4`)
+    const outFile = path.join(settings.ramDir, `${input.angle}-${streamQuality}.mp4`)
 
     input.tempFile = input.tempFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
 
@@ -60,7 +59,21 @@ exports.start = (cb) => {
             return cb()
           }
 
-          const command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=${settings.fps},scale=640:480,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${input.timestamp}}' [video]; [video][icon]overlay=5:462" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+          let command
+          switch (streamQuality) {
+            case 'highest':
+            case 'high':
+              command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=18:18 [icon]; [1]scale=1024:768,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=14:borderw=1:bordercolor=${settings.borderColor}@1.0:x=25:y=750:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${input.timestamp}}' [video]; [video][icon]overlay=5:747" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+              break
+
+            case 'low':
+            case 'lowest':
+              command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=12:12 [icon]; [1]scale=320:240,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=9:borderw=1:bordercolor=${settings.borderColor}@1.0:x=19:y=228:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${input.timestamp}}' [video]; [video][icon]overlay=5:227" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+              break
+
+            default:
+              command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]scale=640:480,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} \(${_.upperFirst(input.angle)}\) %{pts\\:localtime\\:${input.timestamp}}' [video]; [video][icon]overlay=5:462" -preset ${settings.preset} -crf ${crf} ${input.tempFile}`
+          }
 
           log.debug(`[queue/stream] ${input.id} processing: ${command}`)
 

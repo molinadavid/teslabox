@@ -22,7 +22,7 @@ async.series([
   usb.start
 ], (err) => {
   if (err) {
-    log.error(`[main] teslabox failed: ${err}`)
+    log.fatal(`[main] teslabox failed: ${err}`)
     return process.exit(1)
   }
 
