@@ -42,23 +42,6 @@ exports.sendMessage = (recipients, text, cb) => {
   }, cb)
 }
 
-exports.sendPhoto = (recipients, photoUrl, caption, cb) => {
-  cb = cb || function () {}
-
-  if (!client) {
-    return cb()
-  }
-
-  const params = {
-    caption,
-    parse_mode: 'Markdown'
-  }
-
-  async.each(recipients, (recipient, cb) => {
-    p2c(client.sendPhoto(recipient, photoUrl, params))(cb)
-  }, cb)
-}
-
 exports.sendAnimation = (recipients, animationUrl, caption, cb) => {
   cb = cb || function () {}
 
