@@ -7,6 +7,7 @@ const settings = {
   logLevel: 'warn',
   emailRecipients: [],
   telegramRecipients: [],
+  notifications: ['lowStorage', 'earlyWarningVideo'],
   dashcam: true,
   dashcamQuality: 'medium',
   dashcamDuration: 45,
@@ -55,12 +56,17 @@ exports.set = (key, value) => {
       }
       break
 
+    case 'notifications':
+      value = _.compact(_.isArray(value) ? value : _.split(value, /[\r\n, ]+/))
+      break
+
     case 'sentryQuality':
     case 'dashcamQuality':
     case 'streamQuality':
       value = ['highest', 'high', 'medium', 'low', 'lowest'].includes(value) ? value : settings[key]
       break
 
+    case 'telegramCopy':
     case 'dashcam':
     case 'sentry':
     case 'stream':
@@ -71,15 +77,6 @@ exports.set = (key, value) => {
     case 'sentryDuration':
     case 'dashcamDuration':
       value = Number(value) || settings[key]
-      break
-
-    case 'emailRecipients':
-    case 'telegramRecipients':
-    case 'streamAngles':
-      value = _.compact(_.isArray(value) ? value : _.split(value.toLowerCase(), /[\r\n, ]+/))
-      if (!value.length) {
-        value = settings[key]
-      }
       break
 
     default:
