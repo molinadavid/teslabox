@@ -46,7 +46,7 @@
         {{/hasArchives}}
         {{^hasArchives}}
         <tr>
-          <td colspan="4">No archives, yet.</td>
+          <td colspan="5">No archives, yet.</td>
         </tr>
         {{/hasArchives}}
       </tbody>
