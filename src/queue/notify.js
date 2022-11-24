@@ -39,27 +39,25 @@ exports.start = (cb) => {
           return cb()
         }
 
-        let subject = input.subject || input.text
+        let subject = input.subject
         if (!subject) {
           subject = `TeslaBox ${carName} ${_.upperFirst(input.event.type)}`
           if (input.event.type === 'sentry') subject += ` (${_.upperFirst(input.event.angle)})`
+          subject += ` ${input.event.datetime}`
         }
 
-        let text = input.text || input.subject
+        let text = input.text
         if (!text) {
           text = `Map: <https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}>`
           text += `\nApp: <${settings.appUrl}>`
-          if (input.photoUrl) text += `\nPhoto: <${input.photoUrl}>`
           if (input.shortUrl) text += `\nShort: <${input.shortUrl}>`
           if (input.videoUrl) text += `\nVideo: <${input.videoUrl}>`
         }
 
-        let html = input.html || input.text || input.subject
+        let html = input.html
         if (!html) {
-          if (input.photoUrl) html += `<img src="${input.photoUrl}"><br><br>`
-          if (input.shortUrl) html += `<img src="${input.shortUrl}"><br><br>`
-
-          html = `<a href="https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}" target="_blank">Map</a>`
+          html = input.shortUrl ? `<img src="${input.shortUrl}"><br>` : ''
+          html += `<a href="https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon}" target="_blank">Map</a>`
           html += ` | <a href="${settings.appUrl}" target="_blank">App</a>`
           if (input.videoUrl) html += ` | <a href="${input.videoUrl}" target="_blank">Video</a>`
         }
@@ -78,26 +76,16 @@ exports.start = (cb) => {
           return cb()
         }
 
-        let text = input.text || input.subject
+        let text = input.text
         if (!text) {
           text = `${carName} ${_.upperFirst(input.event.type)}`
           if (input.event.type === 'sentry') text += ` (${_.upperFirst(input.event.angle)})`
+          text += ` ${input.event.datetime}`
           text += `\n[Map](https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon})`
           text += ` | [App](${settings.appUrl})`
         }
 
-        if (input.photoUrl) {
-          text += ` | [Photo](${input.photoUrl})`
-
-          telegram.sendPhoto(telegramRecipients, input.photoUrl, text, (err) => {
-            if (!err) {
-              input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed photo ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
-            }
-
-            cb(err)
-          })
-        } else if (input.shortUrl) {
+        if (input.shortUrl) {
           if (input.videoUrl) text += ` | [Video](${input.videoUrl})`
 
           telegram.sendAnimation(telegramRecipients, input.shortUrl, text, (err) => {

@@ -11,7 +11,8 @@ module.exports = (req, res, next) => {
       lon: row.lon,
       url: row.url,
       type: row.type,
-      processed: controllers.formatDate(row.processed)
+      processed: controllers.formatDate(row.processed),
+      taken: row.taken
     }
   }))
 

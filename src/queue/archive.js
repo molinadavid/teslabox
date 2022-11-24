@@ -2,6 +2,7 @@ const config = require('../config')
 const log = require('../log')
 const ping = require('../ping')
 const aws = require('../aws')
+const queue = require('../queue')
 
 const _ = require('lodash')
 const async = require('async')
@@ -45,6 +46,8 @@ exports.start = (cb) => {
 
   q = new Queue((input, cb) => {
     const carName = config.get('carName')
+    const isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
+    const notifications = isNotify ? config.get('notifications') : []
     const archiveQuality = config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality')
     const crf = settings.qualityCrfs[archiveQuality]
 
@@ -131,13 +134,13 @@ exports.start = (cb) => {
           })
         },
         (cb) => {
-          input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-          fs.stat(input.outFile, (err, stats) => {
+          input.concatFile = input.concatFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
+          fs.stat(input.concatFile, (err, stats) => {
             if (!err && stats) {
               return cb()
             }
 
-            const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.outFile}`
+            const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.concatFile}`
 
             log.debug(`[queue/archive] ${input.id} concating: ${command}`)
             exec(command, (err) => {
@@ -145,7 +148,27 @@ exports.start = (cb) => {
                 _.each(_.values(input.files), (file) => {
                   fs.rm(file, () => {})
                 })
+
                 fs.rm(input.chaptersFile, () => {})
+              }
+
+              cb(err)
+            })
+          })
+        },
+        (cb) => {
+          input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
+          fs.stat(input.outFile, (err, stats) => {
+            if (!err && stats) {
+              return cb()
+            }
+
+            const command = `ffmpeg -y -hide_banner -loglevel error -i ${input.concatFile} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${input.outFile}`
+
+            log.debug(`[queue/archive] ${input.id} silencing: ${command}`)
+            exec(command, (err) => {
+              if (!err) {
+                fs.rm(input.concatFile, () => {})
               }
 
               cb(err)
@@ -193,8 +216,17 @@ exports.start = (cb) => {
             processed: +new Date(),
             lat: input.event.est_lat,
             lon: input.event.est_lon,
-            url: input.url
+            url: input.url,
+            taken: +new Date() - input.startAt
           })
+
+          if (notifications.includes('fullVideo')) {
+            queue.notify.push({
+              id: input.id,
+              event: input.event,
+              videoUrl: input.url
+            })
+          }
 
           log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startAt}ms`)
         }
@@ -211,6 +243,10 @@ exports.start = (cb) => {
 
           if (input.chaptersFile) {
             fs.rm(input.chaptersFile, () => {})
+          }
+
+          if (input.concatFile) {
+            fs.rm(input.concatFile, () => {})
           }
 
           if (input.outFile) {
