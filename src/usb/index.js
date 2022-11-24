@@ -14,7 +14,7 @@ const p2c = require('promise-to-callback')
 
 const settings = {
   interval: 3000,
-  usedPercentWarning: 0.7,
+  usedPercentWarning: 0.75,
   usedPercentDanger: 0.9,
   isProduction: process.env.NODE_ENV === 'production',
   usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
@@ -31,6 +31,9 @@ exports.start = (cb) => {
   const startTimestamp = Math.round(+new Date() / 1000)
   const files = []
 
+  let isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
+  let notifications = isNotify ? config.get('notifications') : []
+
   async.series([
     (cb) => {
       glob(`${settings.ramDir}/*`, (err, tempFiles) => {
@@ -46,12 +49,14 @@ exports.start = (cb) => {
     (cb) => {
       getSpace((err, space) => {
         if (!err) {
-          if (space.status !== 'success') {
+          if (space.status !== 'success' && notifications.includes('lowStorage')) {
             const carName = config.get('carName')
             const text = `${carName} storage ${space.status}: ${space.usedPercentFormatted}% used (${space.usedGb} of ${space.totalGb} GB)`
             queue.notify.push({
               id: 'storage',
-              text
+              subject: text,
+              text,
+              html: text
             })
           }
         }
@@ -67,7 +72,10 @@ exports.start = (cb) => {
         const isSentry = config.get('sentry') && sentryDuration
         const isStream = config.get('stream') || config.get('streamCopy')
         const streamAngles = config.get('streamAngles')
-        const isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
+        isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
+        notifications = isNotify ? config.get('notifications') : []
+
+        let isSpaceChanged
 
         async.series([
           mount,
@@ -144,6 +152,7 @@ exports.start = (cb) => {
 
                     try {
                       event = JSON.parse(eventContents)
+                      event.datetime = event.timestamp.replace('T', ' ')
                       event.timestamp = Math.round(+new Date(event.timestamp) / 1000)
                       event.type = eventType
                     } catch (err) {
@@ -186,7 +195,7 @@ exports.start = (cb) => {
                             })
                           },
                           (cb) => {
-                            if (isNotify && angle === event.angle && timestamp < event.timestamp && timestamp + fileDuration >= event.timestamp) {
+                            if (notifications.includes('earlyWarningVideo') && angle === event.angle && timestamp < event.timestamp && timestamp + fileDuration >= event.timestamp) {
                               copyTemp(videoFile, (err, tempFile) => {
                                 if (!err) {
                                   const start = event.timestamp - timestamp
@@ -242,14 +251,23 @@ exports.start = (cb) => {
                           tempFiles
                         })
 
-                        getSpace(cb)
+                        if (notifications.includes('earlyWarning')) {
+                          queue.notify.push({
+                            id: currentFile,
+                            event
+                          })
+                        }
+
+                        isSpaceChanged = true
                       })
                     })
                   })
                 } else {
                   cb()
                 }
-              }, cb)
+              }, (err) => {
+                err ? cb(err) : isSpaceChanged ? getSpace(cb) : cb()
+              })
             })
           }
         ], (err) => {
