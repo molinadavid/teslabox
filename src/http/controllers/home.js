@@ -11,6 +11,7 @@ module.exports = (req, res, next) => {
     config.set('logLevel', req.body.logLevel)
     config.set('emailRecipients', req.body.emailRecipients)
     config.set('telegramRecipients', req.body.telegramRecipients)
+    config.set('notifications', req.body.notifications)
     config.set('dashcam', req.body.dashcam === 'on')
     config.set('dashcamQuality', req.body.dashcamQuality)
     config.set('dashcamDuration', req.body.dashcamDuration)
@@ -27,6 +28,7 @@ module.exports = (req, res, next) => {
   }
 
   const logLevel = config.get('logLevel')
+  const notifications = config.get('notifications')
   const dashcamQuality = config.get('dashcamQuality')
   const sentryQuality = config.get('sentryQuality')
   const streamQuality = config.get('streamQuality')
@@ -41,6 +43,10 @@ module.exports = (req, res, next) => {
     logLevelFatal: logLevel === 'fatal',
     emailRecipients: config.get('emailRecipients').join(', '),
     telegramRecipients: config.get('telegramRecipients').join(', '),
+    notificationsLowStorage: notifications.includes('lowStorage'),
+    notificationsEarlyWarning: notifications.includes('earlyWarning'),
+    notificationsEarlyWarningVideo: notifications.includes('earlyWarningVideo'),
+    notificationsFullVideo: notifications.includes('fullVideo'),
     dashcam: config.get('dashcam'),
     dashcamQualityHighest: dashcamQuality === 'highest',
     dashcamQualityHigh: dashcamQuality === 'high',
