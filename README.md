@@ -222,11 +222,7 @@ For paid (priority) support please contact teslabox@payymail.com
 ## Optionally install TeslaMate
 1. Install Docker and Docker Compose
    ```
-   curl -sSL https://get.docker.com | sh
-   usermod -aG docker pi
-   apt install -y libffi-dev libssl-dev
-   apt remove python-configparser
-   pip3 -v install docker-compose
+   apt install -y docker docker-compose
    ```
 2. Create a docker compose file:
    ```
@@ -318,7 +314,7 @@ For paid (priority) support please contact teslabox@payymail.com
 - Log level (log verbosity. Default: Warn)
 - Email recipients (comma seperated list of email addresses to notify)
 - Telegram recipients (comma seperated list of Telegram Chat IDs to notify)
-- Notifications (notifications to send. Low space to alert when the box has little to no space. Early warning to send an immediate text on each event (~10 seconds). Early warning video to send a short video on each event (~30 seconds). Full video to send the entire video (~10 minutes, with Telegram declining files > 20MB)
+- Notifications (notifications to send. Early warning to send an immediate text on each event (~10 seconds). Early warning video to send a short video on each event (~30 seconds). Full video to send the entire video (~10 minutes, with Telegram declining files > 20MB. Default: Early warning video)
 - is when the box starts with 75%+ used storage. Early warning when an event occures, Early warning video same but with a short clip and Full video Default: Low space & Early warning video)
 - Create dashcam clips (uploads and notifies of dashcam/track events. Default: Enabled)
 - Quality (the higher you set this, the more space each clip would take. Default: Medium)

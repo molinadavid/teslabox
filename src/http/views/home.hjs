@@ -16,16 +16,6 @@
     <meta name="theme-color" content="#ffffff">
   </head>
   <body class="container mt-3">
-    <div class="progress">
-      <div class="progress-bar {{space.class}}" role="progressbar" style="width: {{space.usedPercentFormatted}}%">
-        {{^space.isSuccess}}
-        {{space.usedPercentFormatted}}% used ({{space.usedGb}} of {{space.totalGb}}GB)
-        {{/space.isSuccess}}
-      </div>
-      {{#space.isSuccess}}
-        &nbsp;{{space.usedPercentFormatted}}% used ({{space.usedGb}} of {{space.totalGb}}GB)
-      {{/space.isSuccess}}
-    </div>
     <form method="post">
       <div class="form-floating mt-2">
         <input type="text" class="form-control" id="carName" name="carName" value="{{carName}}">
@@ -52,7 +42,6 @@
       </div>
       <div class="form-floating mt-2 mb-2">
         <select class="form-select" id="notifications" name="notifications" style="height:130px" multiple>
-          <option{{#notificationsLowStorage}} selected{{/notificationsLowStorage}} value="lowStorage">Low storage</option>
           <option{{#notificationsEarlyWarning}} selected{{/notificationsEarlyWarning}} value="earlyWarning">Early warning</option>
           <option{{#notificationsEarlyWarningVideo}} selected{{/notificationsEarlyWarningVideo}} value="earlyWarningVideo">Early warning video</option>
           <option{{#notificationsFullVideo}} selected{{/notificationsFullVideo}} value="fullVideo">Full video</option>

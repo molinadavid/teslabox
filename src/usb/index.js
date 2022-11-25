@@ -5,34 +5,24 @@ const queue = require('../queue')
 const _ = require('lodash')
 const async = require('async')
 const chance = require('chance').Chance()
-const checkDiskSpace = require('check-disk-space').default
 const { exec } = require('child_process')
 const fs = require('fs')
 const glob = require('glob')
 const path = require('path')
-const p2c = require('promise-to-callback')
 
 const settings = {
   interval: 3000,
-  usedPercentWarning: 0.75,
-  usedPercentDanger: 0.9,
   isProduction: process.env.NODE_ENV === 'production',
   usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
   debugFolder: false
 }
 
-let isMounted
-let lastSpace
-
 exports.start = (cb) => {
   cb = cb || function () {}
 
   const startTimestamp = Math.round(+new Date() / 1000)
   const files = []
-
-  let isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
-  let notifications = isNotify ? config.get('notifications') : []
 
   async.series([
     (cb) => {
@@ -47,24 +37,6 @@ exports.start = (cb) => {
       })
     },
     (cb) => {
-      getSpace((err, space) => {
-        if (!err) {
-          if (space.status !== 'success' && notifications.includes('lowStorage')) {
-            const carName = config.get('carName')
-            const text = `${carName} storage ${space.status}: ${space.usedPercentFormatted}% used (${space.usedGb} of ${space.totalGb} GB)`
-            queue.notify.push({
-              id: 'storage',
-              subject: text,
-              text,
-              html: text
-            })
-          }
-        }
-
-        cb(err)
-      })
-    },
-    (cb) => {
       async.forever((next) => {
         const dashcamDuration = config.get('dashcamDuration')
         const isDashcam = config.get('dashcam') && dashcamDuration
@@ -72,10 +44,8 @@ exports.start = (cb) => {
         const isSentry = config.get('sentry') && sentryDuration
         const isStream = config.get('stream') || config.get('streamCopy')
         const streamAngles = config.get('streamAngles')
-        isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
-        notifications = isNotify ? config.get('notifications') : []
-
-        let isSpaceChanged
+        const isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
+        const notifications = isNotify ? config.get('notifications') : []
 
         async.series([
           mount,
@@ -257,17 +227,13 @@ exports.start = (cb) => {
                             event
                           })
                         }
-
-                        isSpaceChanged = true
                       })
                     })
                   })
                 } else {
                   cb()
                 }
-              }, (err) => {
-                err ? cb(err) : isSpaceChanged ? getSpace(cb) : cb()
-              })
+              }, cb)
             })
           }
         ], (err) => {
@@ -298,12 +264,15 @@ const copyTemp = (source, cb) => {
 const mount = (cb) => {
   cb = cb || function () {}
 
-  if (!settings.isProduction || isMounted) {
+  if (!settings.isProduction) {
     return cb()
   }
 
-  exec(`mount ${settings.usbDir} &> /dev/null`, () => {
-    isMounted = true
+  exec(`mount ${settings.usbDir} &> /dev/null`, (err) => {
+    if (err) {
+      log.debug(`mount failed: ${err}`)
+    }
+
     cb()
   })
 }
@@ -311,48 +280,19 @@ const mount = (cb) => {
 const umount = (cb) => {
   cb = cb || function () {}
 
-  if (!settings.isProduction || !isMounted) {
+  if (!settings.isProduction) {
     return cb()
   }
 
-  exec(`umount ${settings.usbDir} &> /dev/null`, () => {
-    isMounted = false
+  exec(`umount ${settings.usbDir} &> /dev/null`, (err) => {
+    if (err) {
+      log.debug(`umount failed: ${err}`)
+    }
+
     cb()
   })
 }
 
 const getAngle = (filename) => {
   return filename.includes('-front') ? 'front' : filename.includes('-right') ? 'right' : filename.includes('-back') ? 'back' : filename.includes('-left') ? 'left' : undefined
-}
-
-const getSpace = (cb) => {
-  cb = cb || function () {}
-
-  mount(() => {
-    p2c(checkDiskSpace(settings.usbDir))((err, space) => {
-      umount(() => {
-        if (!err && space) {
-          space = {
-            total: space.size,
-            free: space.free,
-            used: space.size - space.free,
-            totalGb: Math.round(space.size / 1024 / 1024 / 1024),
-            freeGb: Math.round(space.free / 1024 / 1024 / 1024),
-            usedGb: Math.round((space.size - space.free) / 1024 / 1024 / 1024)
-          }
-
-          space.usedPercent = space.used / space.total
-          space.usedPercentFormatted = Math.ceil(space.usedPercent * 100)
-          space.status = space.usedPercent > settings.usedPercentDanger ? 'danger' : space.usedPercent > settings.usedPercentWarning ? 'warning' : 'success'
-          lastSpace = space
-        }
-
-        cb(err, space)
-      })
-    })
-  })
-}
-
-exports.getLastSpace = () => {
-  return lastSpace || {}
 }

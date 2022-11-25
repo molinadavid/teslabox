@@ -7,7 +7,7 @@ const settings = {
   logLevel: 'warn',
   emailRecipients: [],
   telegramRecipients: [],
-  notifications: ['lowStorage', 'earlyWarningVideo'],
+  notifications: ['earlyWarningVideo'],
   dashcam: true,
   dashcamQuality: 'medium',
   dashcamDuration: 45,
