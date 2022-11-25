@@ -1,5 +1,6 @@
 const config = require('../../config')
 const controllers = require('./')
+const usb = require('../../usb')
 const package = require('../../../package.json')
 
 const _ = require('lodash')
@@ -42,6 +43,7 @@ module.exports = (req, res, next) => {
     logLevelFatal: logLevel === 'fatal',
     emailRecipients: config.get('emailRecipients').join(', '),
     telegramRecipients: config.get('telegramRecipients').join(', '),
+    notificationsLowStorage: notifications.includes('lowStorage'),
     notificationsEarlyWarning: notifications.includes('earlyWarning'),
     notificationsEarlyWarningVideo: notifications.includes('earlyWarningVideo'),
     notificationsFullVideo: notifications.includes('fullVideo'),
@@ -75,6 +77,11 @@ module.exports = (req, res, next) => {
     userAgent: req.get('User-Agent'),
     version: package.version
   }
+
+  const space = usb.getLastSpace()
+  space.isSuccess = space.status === 'success'
+  space.class = space.status === 'danger' ? 'bg-danger' : space.status === 'warning' ? 'bg-warning text-black' : 'bg-success'
+  locals.space = space
 
   res.render('home', locals, (err, result) => {
     if (!err) {
