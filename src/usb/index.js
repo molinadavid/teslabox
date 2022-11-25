@@ -304,7 +304,10 @@ const mount = (cb) => {
   }
 
   exec(`mount ${settings.usbDir} &> /dev/null`, (err) => {
-    log.debug(`mount failed: ${err}`)
+    if (err) {
+      log.debug(`mount failed: ${err}`)
+    }
+
     isMounted = true
     cb()
   })
@@ -318,7 +321,10 @@ const umount = (cb) => {
   }
 
   exec(`umount ${settings.usbDir} &> /dev/null`, (err) => {
-    log.debug(`umount failed: ${err}`)
+    if (err) {
+      log.debug(`umount failed: ${err}`)
+    }
+
     isMounted = false
     cb()
   })
