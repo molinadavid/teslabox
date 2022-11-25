@@ -213,8 +213,8 @@ For paid (priority) support please contact teslabox@payymail.com
   ```
   systemctl daemon-reload
   systemctl enable teslabox
-  systemctl start teslabox
-  systemctl status teslabox
+  service teslabox start
+  service teslabox status
   ```
 
   If the status is Green and shows active (running), continue to setup.
@@ -403,7 +403,8 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
 
    - Restart TeslaBox service:
    ```
-   systemctl restart teslabox
+   service teslabox stop
+   service teslabox start
    ```
 
 ## License
