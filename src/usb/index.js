@@ -317,7 +317,7 @@ const umount = (cb) => {
     return cb()
   }
 
-  exec(`umount ${settings.usbDir} &> /dev/null`, () => {
+  exec(`umount ${settings.usbDir} &> /dev/null`, (err) => {
     log.debug(`umount failed: ${err}`)
     isMounted = false
     cb()
