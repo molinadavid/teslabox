@@ -1,4 +1,5 @@
 const log = require('../log')
+const aws = require('../aws')
 
 const _ = require('lodash')
 const async = require('async')
@@ -30,21 +31,24 @@ exports.start = (cb) => {
         }
 
         log.debug(`[ping] ${host} failed`)
-        cb()
+        setTimeout(cb, settings.interval)
       }, { timeout: settings.timeout })
     }, (_, result) => {
-      if (result) {
-        if (typeof isAlive === 'undefined') {
-          log.info('[ping] connection established')
-        } else if (!isAlive) {
-          log.warn('[ping] connection re-established')
-        }
-      } else if (isAlive) {
+      if (result && isAlive === false) {
+        isAlive = true
+        log.warn('[ping] connection re-established')
+        return aws.start(() => {
+          setTimeout(next, settings.interval)
+        })
+      }
+
+      if (result && typeof isAlive === 'undefined') {
+        log.info('[ping] connection established')
+      } else if (!result && isAlive) {
         log.warn('[ping] connection lost')
       }
 
       isAlive = result
-
       setTimeout(next, settings.interval)
     })
   })

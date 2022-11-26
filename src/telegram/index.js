@@ -3,7 +3,6 @@ const log = require('../log')
 const _ = require('lodash')
 const async = require('async')
 const { TelegramClient } = require('messaging-api-telegram')
-const p2c = require('promise-to-callback')
 
 const settings = {
   accessToken: process.env.TELEGRAM_ACCESS_TOKEN
@@ -38,7 +37,11 @@ exports.sendMessage = (recipients, text, cb) => {
   }
 
   async.each(recipients, (recipient, cb) => {
-    p2c(client.sendMessage(recipient, text, params))(cb)
+    client.sendMessage(recipient, text, params).then(() => {
+      cb()
+    }).catch((err) => {
+      cb(err)
+    })
   }, cb)
 }
 
@@ -55,7 +58,11 @@ exports.sendAnimation = (recipients, animationUrl, caption, cb) => {
   }
 
   async.each(recipients, (recipient, cb) => {
-    p2c(client.sendAnimation(recipient, animationUrl, params))(cb)
+    client.sendAnimation(recipient, animationUrl, params).then(() => {
+      cb()
+    }).catch((err) => {
+      cb(err)
+    })
   }, cb)
 }
 
@@ -73,6 +80,10 @@ exports.sendVideo = (recipients, videoUrl, caption, cb) => {
   }
 
   async.each(recipients, (recipient, cb) => {
-    p2c(client.sendVideo(recipient, videoUrl, params))(cb)
+    client.sendVideo(recipient, videoUrl, params).then(() => {
+      cb()
+    }).catch((err) => {
+      cb(err)
+    })
   }, cb)
 }

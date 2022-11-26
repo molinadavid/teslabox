@@ -58,7 +58,3 @@ exports.fatal = (message) => {
 exports.list = () => {
   return logs
 }
-
-exports.purge = () => {
-  logs = []
-}

@@ -30,18 +30,18 @@ exports.start = (cb) => {
   // if never set, use defaults
   _.forEach(settings, (value, key) => {
     if (!db.has(key)) {
-      exports.set(key, value)
+      set(key, value)
     }
   })
 
   cb()
 }
-
 exports.get = (key) => {
   return db.get(key)
 }
 
-exports.set = (key, value) => {
+
+const set = (key, value) => {
   switch (key) {
     case 'logLevel':
       value = ['debug', 'info', 'warn', 'error', 'fatal'].includes(value) ? value : settings[key]
@@ -66,7 +66,6 @@ exports.set = (key, value) => {
       value = ['highest', 'high', 'medium', 'low', 'lowest'].includes(value) ? value : settings[key]
       break
 
-    case 'telegramCopy':
     case 'dashcam':
     case 'sentry':
     case 'stream':
@@ -86,10 +85,4 @@ exports.set = (key, value) => {
   return db.set(key, value)
 }
 
-exports.sync = () => {
-  return db.sync()
-}
-
-exports.json = () => {
-  return db.JSON()
-}
+exports.set = set

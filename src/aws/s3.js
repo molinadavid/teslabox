@@ -20,8 +20,6 @@ exports.start = (cb) => {
   }
 
   client = new AWS.S3({
-    useDualstack: true,
-    s3ForcePathStyle: true,
     credentials: {
       accessKeyId: settings.accessKeyId,
       secretAccessKey: settings.secretAccessKey

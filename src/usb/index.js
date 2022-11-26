@@ -10,7 +10,6 @@ const { exec } = require('child_process')
 const fs = require('fs')
 const glob = require('glob')
 const path = require('path')
-const p2c = require('promise-to-callback')
 
 const settings = {
   interval: 3000,
@@ -303,9 +302,9 @@ const mount = (cb) => {
     return cb()
   }
 
-  exec(`mount ${settings.usbDir} &> /dev/null`, (err) => {
+  exec(`mount ${settings.usbDir}`, (err) => {
     if (err) {
-      log.debug(`mount failed: ${err}`)
+      log.debug(`[usb] mount failed: ${err}`)
     }
 
     isMounted = true
@@ -320,9 +319,9 @@ const umount = (cb) => {
     return cb()
   }
 
-  exec(`umount ${settings.usbDir} &> /dev/null`, (err) => {
+  exec(`umount ${settings.usbDir}`, (err) => {
     if (err) {
-      log.debug(`umount failed: ${err}`)
+      log.debug(`[usb] umount failed: ${err}`)
     }
 
     isMounted = false
@@ -338,9 +337,9 @@ const getSpace = (cb) => {
   cb = cb || function () {}
 
   mount(() => {
-    p2c(checkDiskSpace(settings.usbDir))((err, space) => {
+    checkDiskSpace(settings.usbDir).then((space) => {
       umount(() => {
-        if (!err && space) {
+        if (space) {
           space = {
             total: space.size,
             free: space.free,
@@ -356,8 +355,10 @@ const getSpace = (cb) => {
           lastSpace = space
         }
 
-        cb(err, space)
+        cb(null, space)
       })
+    }).catch((err) => {
+      cb(err)
     })
   })
 }
