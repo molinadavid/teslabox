@@ -10,6 +10,16 @@ const settings = {
 
 let client
 
+const connect = () => {
+  return new AWS.SESV2({
+    credentials: {
+      accessKeyId: settings.accessKeyId,
+      secretAccessKey: settings.secretAccessKey
+    },
+    region: settings.region
+  })
+}
+
 exports.start = (cb) => {
   cb = cb || function () {}
 
@@ -18,14 +28,7 @@ exports.start = (cb) => {
     return cb()
   }
 
-  client = new AWS.SESV2({
-    credentials: {
-      accessKeyId: settings.accessKeyId,
-      secretAccessKey: settings.secretAccessKey
-    },
-    region: settings.region
-  })
-
+  client = connect()
   cb()
 }
 
@@ -69,5 +72,11 @@ exports.sendEmail = (ToAddresses, subject, text, html, cb) => {
     }
   }
 
-  client.sendEmail(params, cb)
+  client.sendEmail(params, (err) => {
+    if (err) {
+      client = connect()
+    }
+
+    cb(err)
+  })
 }
