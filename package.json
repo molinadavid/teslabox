@@ -1,7 +1,7 @@
 {
   "name": "teslabox",
   "description": "teslabox",
-  "version": "0.9.4-7",
+  "version": "0.9.4-8",
   "private": true,
   "license": "PRIVATE, NON-COMMERCIAL, NON-GOVERNMENTAL USE ONLY!",
   "scripts": {
