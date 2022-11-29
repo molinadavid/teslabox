@@ -106,7 +106,7 @@ exports.start = (cb) => {
                       queue.stream.push({
                         id: currentFile,
                         folder,
-                        file: tempFile,
+                        tempFile,
                         angle,
                         timestamp
                       })

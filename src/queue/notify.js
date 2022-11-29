@@ -21,10 +21,6 @@ exports.start = (cb) => {
   cb = cb || function () {}
 
   q = new Queue((input, cb) => {
-    const carName = config.get('carName')
-    const emailRecipients = config.get('emailRecipients')
-    const telegramRecipients = config.get('telegramRecipients')
-
     async.series([
       (cb) => {
         if (!ping.isAlive()) {
@@ -35,13 +31,13 @@ exports.start = (cb) => {
         cb()
       },
       (cb) => {
-        if (!emailRecipients.length || input.emailedAt) {
+        if (input.steps.includes('emailed') || !input.emailRecipients.length) {
           return cb()
         }
 
         let subject = input.subject
         if (!subject) {
-          subject = `TeslaBox ${carName} ${_.upperFirst(input.event.type)}`
+          subject = `TeslaBox ${input.carName} ${_.upperFirst(input.event.type)}`
           if (input.event.type === 'sentry') subject += ` (${_.upperFirst(input.event.angle)})`
           subject += ` ${input.event.datetime}`
         }
@@ -62,23 +58,23 @@ exports.start = (cb) => {
           if (input.videoUrl) html += ` | <a href="${input.videoUrl}" target="_blank">Video</a>`
         }
 
-        ses.sendEmail(emailRecipients, subject, text, html, (err) => {
+        ses.sendEmail(input.emailRecipients, subject, text, html, (err) => {
           if (!err) {
-            input.emailedAt = +new Date()
-            log.debug(`[queue/notify] ${input.id} emailed ${emailRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
+            input.steps.push('emailed')
+            log.debug(`[queue/notify] ${input.id} emailed ${input.emailRecipients.join(',')} after ${+new Date() - input.startedAt}ms`)
           }
 
           cb(err)
         })
       },
       (cb) => {
-        if (!telegramRecipients.length || input.telegramedAt) {
+        if (input.steps.includes('telegramed') || !input.telegramRecipients.length) {
           return cb()
         }
 
         let text = input.text
         if (!text) {
-          text = `${carName} ${_.upperFirst(input.event.type)}`
+          text = `${input.carName} ${_.upperFirst(input.event.type)}`
           if (input.event.type === 'sentry') text += ` (${_.upperFirst(input.event.angle)})`
           text += ` ${input.event.datetime}`
           text += `\n[Map](https://www.google.com/maps?q=${input.event.est_lat},${input.event.est_lon})`
@@ -88,10 +84,10 @@ exports.start = (cb) => {
         if (input.shortUrl) {
           if (input.videoUrl) text += ` | [Video](${input.videoUrl})`
 
-          telegram.sendAnimation(telegramRecipients, input.shortUrl, text, (err) => {
+          telegram.sendAnimation(input.telegramRecipients, input.shortUrl, text, (err) => {
             if (!err) {
-              input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed short ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
+              input.steps.push('telegramed')
+              log.debug(`[queue/notify] ${input.id} telegramed short ${input.telegramRecipients.join(',')} after ${+new Date() - input.startedAt}ms`)
             }
 
             cb(err)
@@ -99,19 +95,19 @@ exports.start = (cb) => {
         } else if (input.videoUrl) {
           text += ` | [Video](${input.videoUrl})`
 
-          telegram.sendVideo(telegramRecipients, input.videoUrl, text, (err) => {
+          telegram.sendVideo(input.telegramRecipients, input.videoUrl, text, (err) => {
             if (!err) {
-              input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed video ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
+              input.steps.push('telegramed')
+              log.debug(`[queue/notify] ${input.id} telegramed video ${input.telegramRecipients.join(',')} after ${+new Date() - input.startedAt}ms`)
             }
 
             cb(err)
           })
         } else {
-          telegram.sendMessage(telegramRecipients, text, (err) => {
+          telegram.sendMessage(input.telegramRecipients, text, (err) => {
             if (!err) {
-              input.telegramedAt = +new Date()
-              log.debug(`[queue/notify] ${input.id} telegramed message ${telegramRecipients.join(',')} after ${+new Date() - input.startAt}ms`)
+              input.steps.push('telegramed')
+              log.debug(`[queue/notify] ${input.id} telegramed message ${input.telegramRecipients.join(',')} after ${+new Date() - input.startedAt}ms`)
             }
 
             cb(err)
@@ -136,11 +132,14 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
-  input.startAt = +new Date()
+  _.assign(input, {
+    carName: config.get('carName'),
+    emailRecipients: config.get('emailRecipients'),
+    telegramRecipients: config.get('telegramRecipients'),
+    startedAt: +new Date(),
+    steps: []
+  })
+
   q.push(input)
   log.debug(`[queue/notify] ${input.id} queued`)
-}
-
-exports.list = () => {
-  return streams
 }

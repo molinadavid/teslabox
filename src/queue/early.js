@@ -37,35 +37,32 @@ exports.start = (cb) => {
   }
 
   q = new Queue((input, cb) => {
-    const carName = config.get('carName')
-
-    const folderParts = input.folder.split('_')
-
     async.series([
       (cb) => {
-        input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.gif`)
-        fs.stat(input.outFile, (err, stats) => {
-          if (!err && stats) {
-            return cb()
+        if (input.steps.includes('processed')) {
+          return cb()
+        }
+
+        const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
+        const duration = Math.round(settings.duration * 0.6)
+        const timestamp = input.timestamp + start
+        let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${input.carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
+
+        log.debug(`[queue/early] ${input.id} processing: ${command}`)
+        exec(command, (err) => {
+          if (!err) {
+            input.steps.push('processed')
+            fs.rm(input.file, () => {})
           }
 
-          const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
-          const duration = Math.round(settings.duration * 0.6)
-          const timestamp = input.timestamp + start
-          let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
-
-          log.debug(`[queue/early] ${input.id} processing: ${command}`)
-
-          exec(command, (err) => {
-            if (!err) {
-              fs.rm(input.file, () => {})
-            }
-
-            cb(err)
-          })
+          cb(err)
         })
       },
       (cb) => {
+        if (input.steps.includes('uploaded')) {
+          return cb()
+        }
+
         if (!ping.isAlive()) {
           const err = 'no connection to upload'
           return cb(err)
@@ -76,12 +73,10 @@ exports.start = (cb) => {
             return cb(err)
           }
 
-          input.outKey = `${carName}/shorts/${folderParts[0]}/${input.folder}-${input.event.type}.gif`
-          input.videoKey = `${carName}/archives/${folderParts[0]}/${input.folder}-${input.event.type}.mp4`
-
           log.debug(`[queue/early] ${input.id} uploading: ${input.outKey}`)
           aws.s3.putObject(input.outKey, fileContents, (err) => {
             if (!err) {
+              input.steps.push('uploaded')
               fs.rm(input.outFile, () => {})
             }
 
@@ -90,18 +85,32 @@ exports.start = (cb) => {
         })
       },
       (cb) => {
-        aws.s3.getSignedUrl(input.outKey, settings.signedExpirySeconds, (err, url) => {
-          if (!err) {
-            input.shortUrl = url
-          }
+        if (input.steps.includes('signed')) {
+          return cb()
+        }
 
-          cb(err)
-        })
-      },
-      (cb) => {
-        aws.s3.getSignedUrl(input.videoKey, settings.signedExpirySeconds, (err, url) => {
+        async.parallel([
+          (cb) => {
+            aws.s3.getSignedUrl(input.outKey, settings.signedExpirySeconds, (err, url) => {
+              if (!err) {
+                input.shortUrl = url
+              }
+
+              cb(err)
+            })
+          },
+          (cb) => {
+            aws.s3.getSignedUrl(input.videoKey, settings.signedExpirySeconds, (err, url) => {
+              if (!err) {
+                input.videoUrl = url
+              }
+
+              cb(err)
+            })
+          }
+        ], (err) => {
           if (!err) {
-            input.videoUrl = url
+            input.steps.push('signed')
           }
 
           cb(err)
@@ -109,7 +118,7 @@ exports.start = (cb) => {
       }
     ], (err) => {
       if (!err) {
-        log.info(`[queue/early] ${input.id} sent after ${+new Date() - input.startAt}ms`)
+        log.info(`[queue/early] ${input.id} sent after ${+new Date() - input.startedAt}ms`)
 
         queue.notify.push({
           id: input.id,
@@ -133,7 +142,17 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
-  input.startAt = +new Date()
+  const carName = config.get('carName')
+
+  _.assign(input, {
+    carName,
+    outFile: path.join(settings.ramDir, `${chance.hash()}.gif`),
+    outKey: `${carName}/shorts/${input.folder.split('_')[0]}/${input.folder}-${input.event.type}.gif`,
+    videoKey: `${carName}/archives/${input.folder.split('_')[0]}/${input.folder}-${input.event.type}.mp4`,
+    startedAt: +new Date(),
+    steps: []
+  })
+
   q.push(input)
   log.debug(`[queue/early] ${input.id} queued`)
 }

@@ -45,130 +45,137 @@ exports.start = (cb) => {
   }
 
   q = new Queue((input, cb) => {
-    const carName = config.get('carName')
-    const isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
-    const notifications = isNotify ? config.get('notifications') : []
-    const archiveQuality = config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality')
-    const crf = settings.qualityCrfs[archiveQuality]
+    const crf = settings.qualityCrfs[input.archiveQuality]
 
     const timestamps = _.uniq(_.map(input.tempFiles, 'timestamp')).sort()
 
     async.series([
       (cb) => {
+        if (input.steps.includes('processed')) {
+          return cb()
+        }
+
         async.eachSeries(timestamps, (timestamp, cb) => {
-          input.files = input.files || {}
+          if (input.steps.includes(`processed-${timestamp}`)) {
+            return cb()
+          }
+
           input.files[timestamp] = input.files[timestamp] || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-          fs.stat(input.files[timestamp], (err, stats) => {
-            if (!err && stats) {
-              return cb()
+
+          const front = _.find(input.tempFiles, { timestamp, angle: 'front' })
+          const right = _.find(input.tempFiles, { timestamp, angle: 'right' })
+          const back = _.find(input.tempFiles, { timestamp, angle: 'back' })
+          const left = _.find(input.tempFiles, { timestamp, angle: 'left' })
+
+          if (!front || !right || !back || !left) {
+            const err = 'missing files'
+            return cb(err)
+          }
+
+          const timestampSeconds = timestamp + front.start
+
+          let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${front.start} -t ${front.duration} -i ${front.file} -ss ${right.start} -t ${right.duration} -i ${right.file} -ss ${back.start} -t ${back.duration} -i ${back.file} -ss ${left.start} -t ${left.duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
+
+          switch (input.event.angle) {
+            case 'front':
+              command += `[1]scale=1440:1080,pad=1920:1080 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [front][back] overlay=1440:0 [fb]; [fb][left] overlay=1440:360 [fbl]; [fbl][right] overlay=1440:720`
+              break
+
+            case 'right':
+              command += `[1]scale=480:360 [front]; [2]scale=1440:1080,pad=1920:1080 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [right][left] overlay=1440:0 [rl]; [rl][front] overlay=1440:360 [rlf]; [rlf][back] overlay=1440:720`
+              break
+
+            case 'back':
+              command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=1440:1080,pad=1920:1080 [back]; [4]scale=480:360 [left]; [back][front] overlay=1440:0 [bf]; [bf][left] overlay=1440:360 [bfl]; [bfl][right] overlay=1440:720`
+              break
+
+            case 'left':
+              command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=1440:1080,pad=1920:1080 [left]; [left][right] overlay=1440:0 [lr]; [lr][front] overlay=1440:360 [lrf]; [lrf][back] overlay=1440:720`
+              break
+          }
+
+          command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${input.carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestampSeconds}}' [video]; [video][icon]overlay=8:1048" -preset ${settings.preset} -crf ${crf} ${input.files[timestamp]}`
+
+          log.debug(`[queue/archive] ${input.id} processing: ${command}`)
+          exec(command, (err) => {
+            if (!err) {
+              input.steps.push(`processed-${timestamp}`)
+              fs.rm(front.file, () => {})
+              fs.rm(right.file, () => {})
+              fs.rm(back.file, () => {})
+              fs.rm(left.file, () => {})
             }
 
-            const front = _.find(input.tempFiles, { timestamp, angle: 'front' })
-            const right = _.find(input.tempFiles, { timestamp, angle: 'right' })
-            const back = _.find(input.tempFiles, { timestamp, angle: 'back' })
-            const left = _.find(input.tempFiles, { timestamp, angle: 'left' })
+            cb(err)
+          })
+        }, (err) => {
+          if (!err) {
+            input.steps.push('processed')
+          }
 
-            if (!front || !right || !back || !left) {
-              const err = 'Missing files'
-              return cb(err)
-            }
+          cb(err)
+        })
+      },
+      (cb) => {
+        if (input.steps.includes('chaptered')) {
+          return cb()
+        }
 
-            const timestampSeconds = timestamp + front.start
+        const contents = _.map(timestamps, (timestamp) => {
+          return `file '${input.files[timestamp]}'`
+        }).join('\n')
 
-            let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${front.start} -t ${front.duration} -i ${front.file} -ss ${right.start} -t ${right.duration} -i ${right.file} -ss ${back.start} -t ${back.duration} -i ${back.file} -ss ${left.start} -t ${left.duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
+        fs.writeFile(input.chaptersFile, contents, (err) => {
+          if (!err) {
+            input.steps.push('chaptered')
+          }
 
-            switch (input.event.angle) {
-              case 'front':
-                command += `[1]scale=1440:1080,pad=1920:1080 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [front][back] overlay=1440:0 [fb]; [fb][left] overlay=1440:360 [fbl]; [fbl][right] overlay=1440:720`
-                break
+          cb(err)
+        })
+      },
+      (cb) => {
+        if (input.steps.includes('concated')) {
+          return cb()
+        }
 
-              case 'right':
-                command += `[1]scale=480:360 [front]; [2]scale=1440:1080,pad=1920:1080 [right]; [3]scale=480:360 [back]; [4]scale=480:360 [left]; [right][left] overlay=1440:0 [rl]; [rl][front] overlay=1440:360 [rlf]; [rlf][back] overlay=1440:720`
-                break
+        const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.concatFile}`
 
-              case 'back':
-                command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=1440:1080,pad=1920:1080 [back]; [4]scale=480:360 [left]; [back][front] overlay=1440:0 [bf]; [bf][left] overlay=1440:360 [bfl]; [bfl][right] overlay=1440:720`
-                break
-
-              case 'left':
-                command += `[1]scale=480:360 [front]; [2]scale=480:360 [right]; [3]scale=480:360 [back]; [4]scale=1440:1080,pad=1920:1080 [left]; [left][right] overlay=1440:0 [lr]; [lr][front] overlay=1440:360 [lrf]; [lrf][back] overlay=1440:720`
-                break
-            }
-
-            command += ` [all]; [all]drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=25:borderw=1:bordercolor=${settings.borderColor}@1.0:x=38:y=1050:text='TeslaBox ${carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestampSeconds}}' [video]; [video][icon]overlay=8:1048" -preset ${settings.preset} -crf ${crf} ${input.files[timestamp]}`
-
-            log.debug(`[queue/archive] ${input.id} merging: ${command}`)
-            exec(command, (err) => {
-              if (!err) {
-                // clean up silently
-                fs.rm(front.file, () => {})
-                fs.rm(right.file, () => {})
-                fs.rm(back.file, () => {})
-                fs.rm(left.file, () => {})
-              }
-
-              cb(err)
+        log.debug(`[queue/archive] ${input.id} concating: ${command}`)
+        exec(command, (err) => {
+          if (!err) {
+            input.steps.push('concated')
+            _.each(_.values(input.files), (file) => {
+              fs.rm(file, () => {})
             })
-          })
-        }, cb)
-      },
-      (cb) => {
-        input.chaptersFile = input.chaptersFile || path.join(settings.ramDir, `${chance.hash()}.txt`)
-        fs.stat(input.chaptersFile, (err, stats) => {
-          if (!err && stats) {
-            return cb()
+
+            fs.rm(input.chaptersFile, () => {})
           }
 
-          const contents = _.map(timestamps, (timestamp) => {
-            return `file '${input.files[timestamp]}'`
-          }).join('\n')
-
-          fs.writeFile(input.chaptersFile, contents, cb)
+          cb(err)
         })
       },
       (cb) => {
-        input.concatFile = input.concatFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-        fs.stat(input.concatFile, (err, stats) => {
-          if (!err && stats) {
-            return cb()
+        if (input.steps.includes('silenced')) {
+          return cb()
+        }
+
+        const command = `ffmpeg -y -hide_banner -loglevel error -i ${input.concatFile} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${input.outFile}`
+
+        log.debug(`[queue/archive] ${input.id} silencing: ${command}`)
+        exec(command, (err) => {
+          if (!err) {
+            input.steps.push('silenced')
+            fs.rm(input.concatFile, () => {})
           }
 
-          const command = `ffmpeg -y -hide_banner -loglevel error -f concat -safe 0 -i ${input.chaptersFile} -c copy ${input.concatFile}`
-
-          log.debug(`[queue/archive] ${input.id} concating: ${command}`)
-          exec(command, (err) => {
-            if (!err) {
-              _.each(_.values(input.files), (file) => {
-                fs.rm(file, () => {})
-              })
-
-              fs.rm(input.chaptersFile, () => {})
-            }
-
-            cb(err)
-          })
+          cb(err)
         })
       },
       (cb) => {
-        input.outFile = input.outFile || path.join(settings.ramDir, `${chance.hash()}.mp4`)
-        fs.stat(input.outFile, (err, stats) => {
-          if (!err && stats) {
-            return cb()
-          }
+        if (input.steps.includes('uploaded')) {
+          return cb()
+        }
 
-          const command = `ffmpeg -y -hide_banner -loglevel error -i ${input.concatFile} -f lavfi -i anullsrc -c:v copy -c:a aac -shortest ${input.outFile}`
-
-          log.debug(`[queue/archive] ${input.id} silencing: ${command}`)
-          exec(command, (err) => {
-            if (!err) {
-              fs.rm(input.concatFile, () => {})
-            }
-
-            cb(err)
-          })
-        })
-      },
-      (cb) => {
         if (!ping.isAlive()) {
           const err = 'no connection to upload'
           return cb(err)
@@ -179,12 +186,10 @@ exports.start = (cb) => {
             return cb(err)
           }
 
-          const folderParts = input.folder.split('_')
-          input.outKey = `${carName}/archives/${folderParts[0]}/${input.folder}-${input.event.type}.mp4`
-
           log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`)
           aws.s3.putObject(input.outKey, fileContents, (err) => {
             if (!err) {
+              input.steps.push('uploaded')
               fs.rm(input.outFile, () => {})
             }
 
@@ -193,8 +198,13 @@ exports.start = (cb) => {
         })
       },
       (cb) => {
+        if (input.steps.includes('signed')) {
+          cb()
+        }
+
         aws.s3.getSignedUrl(input.outKey, settings.signedExpirySeconds, (err, url) => {
           if (!err) {
+            input.steps.push('signed')
             input.videoUrl = url
           }
 
@@ -213,10 +223,10 @@ exports.start = (cb) => {
           lat: input.event.est_lat,
           lon: input.event.est_lon,
           url: input.videoUrl,
-          taken: +new Date() - input.startAt
+          taken: +new Date() - input.startedAt
         })
 
-        if (notifications.includes('fullVideo')) {
+        if (input.notifications.includes('fullVideo')) {
           queue.notify.push({
             id: input.id,
             event: input.event,
@@ -224,7 +234,7 @@ exports.start = (cb) => {
           })
         }
 
-        log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startAt}ms`)
+        log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startedAt}ms`)
       }
 
       // clean up silently
@@ -258,7 +268,21 @@ exports.start = (cb) => {
 }
 
 exports.push = (input) => {
-  input.startAt = +new Date()
+  const carName = config.get('carName')
+
+  _.assign(input, {
+    carName,
+    notifications: config.get('emailRecipients').length || config.get('telegramRecipients').length ? config.get('notifications') : [],
+    archiveQuality: config.get(input.event.type === 'sentry' ? 'sentryQuality' : 'dashcamQuality'),
+    chaptersFile: path.join(settings.ramDir, `${chance.hash()}.txt`),
+    concatFile: path.join(settings.ramDir, `${chance.hash()}.mp4`),
+    outFile: path.join(settings.ramDir, `${chance.hash()}.mp4`),
+    outKey: `${carName}/archives/${input.folder.split('_')[0]}/${input.folder}-${input.event.type}.mp4`,
+    files: {},
+    startedAt: +new Date(),
+    steps: []
+  })
+
   q.push(input)
   log.debug(`[queue/archive] ${input.id} queued`)
 }
