@@ -5,7 +5,6 @@ const queue = require('../queue')
 const _ = require('lodash')
 const async = require('async')
 const chance = require('chance').Chance()
-const df = require('node-df')
 const { exec } = require('child_process')
 const fs = require('fs')
 const glob = require('glob')
@@ -337,16 +336,14 @@ const getSpace = (cb) => {
   cb = cb || function () {}
 
   mount(() => {
-    df({
-      file: settings.usbDir,
-      prefixMultiplier: 'GB'
-    }, (err, space) => {
+    exec(`df -h ${settings.usbDir}`, (err, space) => {
       umount(() => {
-        if (_.get(space, '0.size')) {
+        if (!err) {
+          space = space.split(/[\r\n]+/)[1].split(/\s+/)
           space = {
-            total: Math.round(parseFloat(space[0].size)),
-            used: Math.round(parseFloat(space[0].used)),
-            available: Math.round(parseFloat(space[0].available))
+            total: Math.round(parseFloat(space[1])),
+            used: Math.round(parseFloat(space[2])),
+            available: Math.round(parseFloat(space[3]))
           }
 
           space.usedPercent = space.used / space.total
