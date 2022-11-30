@@ -19,11 +19,11 @@
     <div class="progress">
       <div class="progress-bar {{space.class}}" role="progressbar" style="width: {{space.usedPercentFormatted}}%">
         {{^space.isSuccess}}
-        {{space.usedPercentFormatted}}% used ({{space.usedGb}} of {{space.totalGb}}GB)
+        {{space.usedPercentFormatted}}% used ({{space.used}} of {{space.total}}GB)
         {{/space.isSuccess}}
       </div>
       {{#space.isSuccess}}
-        &nbsp;{{space.usedPercentFormatted}}% used ({{space.usedGb}} of {{space.totalGb}}GB)
+        &nbsp;{{space.usedPercentFormatted}}% used ({{space.used}} of {{space.total}}GB)
       {{/space.isSuccess}}
     </div>
     <form method="post">

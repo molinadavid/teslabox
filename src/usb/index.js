@@ -5,7 +5,7 @@ const queue = require('../queue')
 const _ = require('lodash')
 const async = require('async')
 const chance = require('chance').Chance()
-const checkDiskSpace = require('check-disk-space').default
+const df = require('node-df')
 const { exec } = require('child_process')
 const fs = require('fs')
 const glob = require('glob')
@@ -50,7 +50,7 @@ exports.start = (cb) => {
         if (!err) {
           if (space.status !== 'success' && notifications.includes('lowStorage')) {
             const carName = config.get('carName')
-            const text = `${carName} storage ${space.status}: ${space.usedPercentFormatted}% used (${space.usedGb} of ${space.totalGb} GB)`
+            const text = `${carName} storage ${space.status}: ${space.usedPercentFormatted}% used (${space.used} of ${space.total} GB)`
             queue.notify.push({
               id: 'storage',
               subject: text,
@@ -337,16 +337,16 @@ const getSpace = (cb) => {
   cb = cb || function () {}
 
   mount(() => {
-    checkDiskSpace(settings.usbDir).then((space) => {
+    df({
+      file: settings.usbDir,
+      prefixMultiplier: 'GB'
+    }, (err, space) => {
       umount(() => {
         if (space) {
           space = {
-            total: space.size,
-            free: space.free,
-            used: space.size - space.free,
-            totalGb: Math.round(space.size / 1024 / 1024 / 1024),
-            freeGb: Math.round(space.free / 1024 / 1024 / 1024),
-            usedGb: Math.round((space.size - space.free) / 1024 / 1024 / 1024)
+            total: parseFloat(space.size),
+            used: parseFloat(space.used),
+            available: parseFloat(space.available)
           }
 
           space.usedPercent = space.used / space.total
@@ -355,10 +355,8 @@ const getSpace = (cb) => {
           lastSpace = space
         }
 
-        cb(null, space)
+        cb(err, space)
       })
-    }).catch((err) => {
-      cb(err)
     })
   })
 }
