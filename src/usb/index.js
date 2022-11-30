@@ -342,11 +342,11 @@ const getSpace = (cb) => {
       prefixMultiplier: 'GB'
     }, (err, space) => {
       umount(() => {
-        if (space) {
+        if (_.get(space, '0.size')) {
           space = {
-            total: parseFloat(space.size),
-            used: parseFloat(space.used),
-            available: parseFloat(space.available)
+            total: Math.round(parseFloat(space[0].size)),
+            used: Math.round(parseFloat(space[0].used)),
+            available: Math.round(parseFloat(space[0].available))
           }
 
           space.usedPercent = space.used / space.total
