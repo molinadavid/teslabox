@@ -103,7 +103,8 @@ For paid (priority) support please contact teslabox@payymail.com
   echo hdmi_blanking=2 >> /boot/config.txt
   sed -i 's/fsck.repair=yes/fsck.repair=no/g' /boot/cmdline.txt
   sed -i 's/rootwait/rootwait modules-load=dwc2/g' /boot/cmdline.txt
-  echo 'static domain_name_servers=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 9.9.9.9 149.112.112.112' >> /etc/dhcpcd.conf
+  printf 'nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\nnameserver 9.9.9.
+9\nnameserver 149.112.112.112' > /etc/resolv.conf
 
   ```
 10. Add one or more WiFi networks with increasing priority:
