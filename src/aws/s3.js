@@ -11,16 +11,6 @@ const settings = {
 
 let client
 
-const connect = () => {
-  return new AWS.S3({
-    credentials: {
-      accessKeyId: settings.accessKeyId,
-      secretAccessKey: settings.secretAccessKey
-    },
-    region: settings.region
-  })
-}
-
 exports.start = (cb) => {
   cb = cb || function () {}
 
@@ -29,7 +19,14 @@ exports.start = (cb) => {
     return cb()
   }
 
-  client = connect()
+  client = new AWS.S3({
+    credentials: {
+      accessKeyId: settings.accessKeyId,
+      secretAccessKey: settings.secretAccessKey
+    },
+    region: settings.region
+  })
+
   cb()
 }
 
@@ -44,13 +41,7 @@ exports.putObject = (Key, Body, cb) => {
     Bucket: settings.bucket,
     Key,
     Body
-  }, (err) => {
-    if (err) {
-      client = connect()
-    }
-
-    cb(err)
-  })
+  }, cb)
 }
 
 exports.getSignedUrl = (Key, Expires, cb) => {
