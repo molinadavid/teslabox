@@ -29,6 +29,13 @@ async.series([
   log.info(`[main] teslabox started`)
 })
 
+process.on('SIGINT', () => {
+  log.info(`[main] teslabox stopped`)
+  usb.umount(() => {
+    process.exit(0)
+  })
+})
+
 process.on('uncaughtException', (err) => {
   log.fatal(`[main] uncaught exception: ${err}`)
   console.error(err)
