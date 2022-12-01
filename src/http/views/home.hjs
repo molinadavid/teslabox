@@ -129,7 +129,7 @@
         <button type="submit" class="btn btn-primary">Update</button>
       </div>
       <div class="my-3">
-        <a href="/log">Log</a> &bull; <a href="https://github.com/mluggy/teslabox" target="_blank">v{{version}}</a> &bull; {{time}} &bull; {{userIp}} &bull; {{userAgent}}</small>
+        <a href="/log">Log</a> &bull; <a href="https://github.com/mluggy/teslabox" target="_blank">v{{version}}</a> {{#isUpgrade}}<a href="/upgrade" onclick="return confirm('Are you sure? This will take ~minute and restart')">[Upgrade]</a> {{/isUpgrade}}&bull; {{time}} &bull; {{userIp}} &bull; {{userAgent}}</small>
       </div>
     </form>
   </body>

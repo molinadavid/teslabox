@@ -36,8 +36,9 @@ exports.start = (cb) => {
 
   app.use('/ram/', express.static(settings.ramDir, staticParams))
   app.get('/archive', controllers.archive)
-  app.get('/stream', controllers.stream)
   app.get('/log', controllers.log)
+  app.get('/stream', controllers.stream)
+  app.get('/upgrade', controllers.upgrade)
   app.use('/', express.static(assetsDir, staticParams))
   app.all('/', controllers.home)
   app.use(controllers.response)

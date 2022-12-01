@@ -6,6 +6,7 @@ exports.home = require('./home')
 exports.log = require('./log')
 exports.archive = require('./archive')
 exports.stream = require('./stream')
+exports.upgrade = require('./upgrade')
 
 exports.formatAngle = (angle) => {
   return {

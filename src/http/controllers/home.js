@@ -72,10 +72,11 @@ module.exports = (req, res, next) => {
     streamAnglesRight: streamAngles.includes('right'),
     streamAnglesBack: streamAngles.includes('back'),
     streamAnglesLeft: streamAngles.includes('left'),
+    version: package.version,
+    isUpgrade: process.env.NODE_ENV === 'production',
     time: controllers.formatDate(),
     userIp: req.ip,
     userAgent: req.get('User-Agent'),
-    version: package.version
   }
 
   const space = usb.getLastSpace()
