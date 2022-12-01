@@ -6,7 +6,7 @@ const http = require('http')
 const path = require('path')
 
 const settings = {
-  timeout: 60000,
+  timeout: 120000,
   port: process.env.ADMIN_PORT ? Number(process.env.ADMIN_PORT) : 80,
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 }
