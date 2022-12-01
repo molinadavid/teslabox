@@ -336,7 +336,7 @@ const getSpace = (cb) => {
   cb = cb || function () {}
 
   mount(() => {
-    exec(`df -h ${settings.usbDir}`, (err, space) => {
+    exec(`df -B G ${settings.usbDir}`, (err, space) => {
       umount(() => {
         if (!err) {
           space = space.split(/[\r\n]+/)[1].split(/\s+/)
@@ -357,6 +357,8 @@ const getSpace = (cb) => {
     })
   })
 }
+
+exports.umount = umount
 
 exports.getLastSpace = () => {
   return lastSpace || {}

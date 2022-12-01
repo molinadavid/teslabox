@@ -103,9 +103,6 @@ For paid (priority) support please contact teslabox@payymail.com
   echo hdmi_blanking=2 >> /boot/config.txt
   sed -i 's/fsck.repair=yes/fsck.repair=no/g' /boot/cmdline.txt
   sed -i 's/rootwait/rootwait modules-load=dwc2/g' /boot/cmdline.txt
-  printf 'nameserver 1.1.1.1\nnameserver 1.0.0.1\nnameserver 8.8.8.8\nnameserver 8.8.4.4\nnameserver 9.9.9.
-9\nnameserver 149.112.112.112' > /etc/resolv.conf
-
   ```
 10. Add one or more WiFi networks with increasing priority:
   - First, edit your WiFi configuration file:
@@ -157,11 +154,12 @@ For paid (priority) support please contact teslabox@payymail.com
    echo "/usr/sbin/modprobe g_mass_storage >> /var/log/syslog 2>&1" >> /etc/rc.local
    echo "exit 0" >> /etc/rc.local
    ```
-14. Install Tailscale and click the authorize link to add this machine to your network
+14. Install Tailscale and click the authorize link to add this machine to your network. If you get an error, reboot the box, run ```sudo -i`` and try this step again.
   ```
   curl -fsSL https://tailscale.com/install.sh | sh
   tailscale up
   ```
+
 15. Download and install TeslaBox and packages:
    ```
    cd /root
@@ -171,7 +169,6 @@ For paid (priority) support please contact teslabox@payymail.com
    cp -r teslabox-main/* teslabox
    rm -rf teslabox-main
    cd teslabox
-   export NPM_CONFIG_UNSAFE_PERM=true
    npm install
    ```
 16. Finalize the TeslaBox service:
@@ -214,8 +211,8 @@ For paid (priority) support please contact teslabox@payymail.com
   ```
   systemctl daemon-reload
   systemctl enable teslabox
-  service teslabox start
-  service teslabox status
+  systemctl start teslabox
+  systemctl status teslabox
   ```
 
   If the status is Green and shows active (running), continue to setup.
@@ -310,7 +307,7 @@ For paid (priority) support please contact teslabox@payymail.com
 1. Connect (or Re-connect) TeslaBox to your computer via USB cable and wait for it to appear as drive
 2. Create an empty ```TeslaCam``` under the root folder of the drive
 3. Make sure TeslaBox is connected to your home network via ethernet cable or home WiFi
-4. Browse to the hostname you have setup to change this settings if needed:
+4. Browse to the hostname you have setup to change these settings if needed:
 - Car name (associates with each upload and notification. Default: My Tesla)
 - Log level (log verbosity. Default: Warn)
 - Email recipients (comma seperated list of email addresses to notify)
@@ -328,8 +325,8 @@ For paid (priority) support please contact teslabox@payymail.com
 - Stream angles (angles to process. Default: front)
 
 ### Tailscale setup
-1. Under DNS -> Nameservers, note the hostname suffix MagicDNS has generated (something like foo.bar.beta.tailscale.net)
-2. Your magic {hostname} is the machine name followed by this suffix (i.e model3.foo.bar.beta.tailscale.net)
+1. Under DNS -> Nameservers, note the hostname suffix MagicDNS has generated (something like tailnet-1234.ts.net). Your magic {hostname} is the machine name followed by this suffix (i.e model3.tailnet-1234.ts.net)
+2. Under DNS -> Nameservers -> Global nameservers, enable "Override local DNS" and add Google, CloudFlare & Quad9 Public DNS
 
 ### TeslaMate setup
 1. Configure TeslaMate under http://{hostname}:4000
@@ -387,25 +384,10 @@ There might be 3G/4G bandwidth costs associated with your WiFi connectivity. If 
 
 ## Upgrade
 
-1. SSH to your Raspberry Pi
-2. Perform the following as sudo using ```sudo -i```
-
-     - Download and re-install TeslaBox and packages:
-    ```
-    cd /root
-    curl -o main.zip https://codeload.github.com/mluggy/teslabox/zip/refs/heads/main
-    unzip -o main.zip
-    cp -r teslabox-main/* teslabox
-    rm -rf teslabox-main
-    cd teslabox
-    export NPM_CONFIG_UNSAFE_PERM=true
-    npm install
-    ```
-
-   - Restart TeslaBox service:
+1. You can now click "Upgrade" from the Admin console
+2. Alternatively, SSH to your Raspberry Pi and run the following to download the latest code, install and restart the service:
    ```
-   service teslabox stop
-   service teslabox start
+   sh /root/teslabox/upgrade.sh
    ```
 
 ## License
