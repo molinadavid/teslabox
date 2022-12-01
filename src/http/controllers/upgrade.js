@@ -8,12 +8,13 @@ module.exports = (req, res, next) => {
 
   log.debug(`[http] upgrading: ${command}`)
   exec(command, (err, stdout) => {
-    if (!err) {
+    if (err) {
+      log.error(`[http] teslabox upgrade failed: ${err}`)
+    } else {
+      res.location('/')
       log.info(`[http] teslabox upgraded`)
     }
 
-    console.log(err, stdout)
-    res.location('/')
     next(err)
   })
 }
