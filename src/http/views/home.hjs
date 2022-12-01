@@ -136,6 +136,7 @@
       const element = document.querySelector('a[target="upgrade"]')
       element.addEventListener('click', (event) => {
         if (confirm('Are you sure? This will take 1 minute and restart')) {
+          event.target.innerHTML = '[<i class="bi bi-arrow-repeat"></i> Upgrading...]'
           setTimeout(() => {
             location.href = '/'
           }, 60000)
