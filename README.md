@@ -169,7 +169,8 @@ For paid (priority) support please contact teslabox@payymail.com
    cp -r teslabox-main/* teslabox
    rm -rf teslabox-main
    cd teslabox
-   npm install
+   npm install --production
+   npm prune
    ```
 16. Finalize the TeslaBox service:
   - First, create the service file:

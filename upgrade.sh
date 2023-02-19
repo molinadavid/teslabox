@@ -6,5 +6,6 @@ cp -r teslabox-main/* teslabox
 rm -rf teslabox-main
 rm main.zip
 cd teslabox
-npm install
+npm install --production
+npm prune
 systemctl restart teslabox
