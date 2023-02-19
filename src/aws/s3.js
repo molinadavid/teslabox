@@ -1,6 +1,6 @@
 const log = require('../log')
 
-const AWS = require('aws-sdk')
+const { S3 } = require('@aws-sdk/client-s3')
 
 const settings = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -19,7 +19,7 @@ exports.start = (cb) => {
     return cb()
   }
 
-  client = new AWS.S3({
+  client = new S3({
     credentials: {
       accessKeyId: settings.accessKeyId,
       secretAccessKey: settings.secretAccessKey
