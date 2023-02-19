@@ -15,6 +15,7 @@ const settings = {
   usedPercentWarning: 0.75,
   usedPercentDanger: 0.9,
   isProduction: process.env.NODE_ENV === 'production',
+  isMac: process.platform === 'darwin',
   usbDir: process.env.NODE_ENV === 'production' ? '/mnt/usb' : path.join(__dirname, '../../mnt/usb'),
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
   debugFolder: false
@@ -39,8 +40,8 @@ exports.start = (cb) => {
           return cb(err)
         }
 
-        async.each(tempFiles, (tempFile, cb) => {
-          fs.rm(tempFile, () => cb)
+        async.eachSeries(tempFiles, (tempFile, cb) => {
+          fs.rm(tempFile, () => cb())
         }, cb)
       })
     },
@@ -68,6 +69,7 @@ exports.start = (cb) => {
         const isDashcam = config.get('dashcam') && dashcamDuration
         const sentryDuration = config.get('sentryDuration')
         const isSentry = config.get('sentry') && sentryDuration
+        const sentryIgnoreAngles = config.get('sentryIgnoreAngles')
         const isStream = config.get('stream') || config.get('streamCopy')
         const streamAngles = config.get('streamAngles')
         isNotify = config.get('emailRecipients').length || config.get('telegramRecipients').length
@@ -159,6 +161,10 @@ exports.start = (cb) => {
 
                     event.angle = ['3', '5'].includes(event.camera) ? 'left' : ['4', '6'].includes(event.camera) ? 'right' : event.camera === '7' ? 'back' : 'front'
 
+                    if (eventType === 'sentry' && sentryIgnoreAngles.includes(event.angle)) {
+                      return cb()
+                    }
+
                     const archiveDuration = event.type === 'sentry' ? sentryDuration : dashcamDuration
                     const startEventTimestamp = event.timestamp - Math.round(archiveDuration * (event.type === 'sentry' ? 0.4 : 0.9))
                     const endEventTimestamp = event.timestamp + Math.round(archiveDuration * (event.type === 'sentry' ? 0.6 : 0.1))
@@ -176,6 +182,7 @@ exports.start = (cb) => {
                         const angle = getAngle(filename)
                         const dateParts = filename.split(`-${angle}`)[0].split('_')
                         const timestamp = Math.round(+new Date(`${dateParts[0]} ${dateParts[1].replace(/-/g, ':')}`) / 1000)
+
                         if (timestamp + 60 < startEventTimestamp || timestamp > endEventTimestamp) {
                           return cb()
                         }
@@ -336,7 +343,7 @@ const getSpace = (cb) => {
   cb = cb || function () {}
 
   mount(() => {
-    exec(`df -B G ${settings.usbDir}`, (err, space) => {
+    exec(`df ${settings.isMac ? '-g' : '-B G'} ${settings.usbDir}`, (err, space) => {
       umount(() => {
         if (!err) {
           space = space.split(/[\r\n]+/)[1].split(/\s+/)
