@@ -18,6 +18,7 @@ module.exports = (req, res, next) => {
     config.set('sentry', req.body.sentry === 'on')
     config.set('sentryQuality', req.body.sentryQuality)
     config.set('sentryDuration', req.body.sentryDuration)
+    config.set('sentryIgnoreAngles', req.body.sentryIgnoreAngles)
     config.set('stream', req.body.stream === 'on')
     config.set('streamCopy', req.body.streamCopy === 'on')
     config.set('streamQuality', req.body.streamQuality)
@@ -31,6 +32,7 @@ module.exports = (req, res, next) => {
   const notifications = config.get('notifications')
   const dashcamQuality = config.get('dashcamQuality')
   const sentryQuality = config.get('sentryQuality')
+  const sentryIgnoreAngles = config.get('sentryIgnoreAngles')
   const streamQuality = config.get('streamQuality')
   const streamAngles = config.get('streamAngles')
 
@@ -61,6 +63,10 @@ module.exports = (req, res, next) => {
     sentryQualityLow: sentryQuality === 'low',
     sentryQualityLowest: sentryQuality === 'lowest',
     sentryDuration: config.get('sentryDuration'),
+    sentryIgnoreAnglesFront: sentryIgnoreAngles.includes('front'),
+    sentryIgnoreAnglesRight: sentryIgnoreAngles.includes('right'),
+    sentryIgnoreAnglesBack: sentryIgnoreAngles.includes('back'),
+    sentryIgnoreAnglesLeft: sentryIgnoreAngles.includes('left'),
     stream: config.get('stream'),
     streamCopy: config.get('streamCopy'),
     streamQualityHighest: streamQuality === 'highest',

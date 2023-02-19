@@ -97,6 +97,16 @@
         <input type="number" class="form-control" id="sentryDuration" name="sentryDuration" min="15" max="300" value="{{sentryDuration}}">
         <label for="sentryDuration">Duration (seconds)</label>
       </div>
+      <div class="form-floating mt-2 mb-2">
+        <select class="form-select" id="sentryIgnoreAngles" name="sentryIgnoreAngles" style="height:150px" multiple>
+          <option></option>
+          <option{{#sentryIgnoreAnglesFront}} selected{{/sentryIgnoreAnglesFront}} value="front">Front</option>
+          <option{{#sentryIgnoreAnglesRight}} selected{{/sentryIgnoreAnglesRight}} value="right">Right</option>
+          <option{{#sentryIgnoreAnglesBack}} selected{{/sentryIgnoreAnglesBack}} value="back">Back</option>
+          <option{{#sentryIgnoreAnglesLeft}} selected{{/sentryIgnoreAnglesLeft}} value="left">Left</option>
+        </select>
+        <label for="sentryIgnoreAngles">Ignore angles</label>
+      </div>
       <div class="form-check form-switch mt-3 fw-bolder">
         <input class="form-check-input" id="stream" name="stream" type="checkbox" role="switch"{{#stream}} checked{{/stream}}>
         <label class="form-check-label" for="stream"><a href="/stream">Stream live videos</a></label>

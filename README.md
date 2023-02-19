@@ -320,6 +320,7 @@ For paid (priority) support please contact teslabox@payymail.com
 - Create sentry clips (uploads and notifies of sentry events. Default: Enabled)
 - Quality (the higher you set this, the more space each clip would take. Default: High)
 - Duration (the longer you set this, the more time and space each clip would take. Default: 30)
+- Ignore angles (do not upload or notify of sentry events from these angles. Note this will reset to default on every run. Default: none)
 - Stream (enables streaming. Default: Disabled)
 - Copy streams (uploads streams to remote location. Default: Disabled)
 - Quality (the higher you set this, the more space each clip would take. Default: High)

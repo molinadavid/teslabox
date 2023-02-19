@@ -14,6 +14,7 @@ const settings = {
   sentry: true,
   sentryQuality: 'high',
   sentryDuration: 30,
+  sentryIgnoreAngles: [],
   stream: false,
   streamCopy: false,
   streamQuality: 'high',
@@ -34,6 +35,8 @@ exports.start = (cb) => {
     }
   })
 
+  set('sentryIgnoreAngles', settings.sentryIgnoreAngles)
+
   cb()
 }
 exports.get = (key) => {
@@ -50,6 +53,7 @@ const set = (key, value) => {
     case 'emailRecipients':
     case 'telegramRecipients':
     case 'streamAngles':
+    case 'sentryIgnoreAngles':
       value = _.compact(_.isArray(value) ? value : _.split(value.toLowerCase(), /[\r\n, ]+/))
       if (!value.length) {
         value = settings[key]
