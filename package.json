@@ -10,9 +10,8 @@
     "test": "echo \"TEST OK\""
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.272.0",
-    "@aws-sdk/client-sesv2": "^3.272.0",
     "async": "^3.2.2",
+    "aws-sdk": "^2.1319.0",
     "better-queue": "^3.8.12",
     "chance": "^1.1.9",
     "compression": "^1.7.4",

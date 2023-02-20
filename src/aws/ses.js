@@ -1,6 +1,6 @@
 const log = require('../log')
 
-const { SESv2: SESV2 } = require('@aws-sdk/client-sesv2')
+const AWS = require('aws-sdk')
 
 const settings = {
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -18,7 +18,7 @@ exports.start = (cb) => {
     return cb()
   }
 
-  client = new SESV2({
+  client = new AWS.SESV2({
     credentials: {
       accessKeyId: settings.accessKeyId,
       secretAccessKey: settings.secretAccessKey
