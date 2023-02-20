@@ -54,7 +54,7 @@ const set = (key, value) => {
     case 'telegramRecipients':
     case 'streamAngles':
     case 'sentryIgnoreAngles':
-      value = _.compact(_.isArray(value) ? value : _.split(value.toLowerCase(), /[\r\n, ]+/))
+      value = _.compact(_.isArray(value) ? value : _.split((value || '').toLowerCase(), /[\r\n, ]+/))
       if (!value.length) {
         value = settings[key]
       }
