@@ -16,6 +16,7 @@ module.exports = (req, res, next) => {
     config.set('dashcamQuality', req.body.dashcamQuality)
     config.set('dashcamDuration', req.body.dashcamDuration)
     config.set('sentry', req.body.sentry === 'on')
+    config.set('sentryCinematic', req.body.sentryCinematic === 'on')
     config.set('sentryQuality', req.body.sentryQuality)
     config.set('sentryDuration', req.body.sentryDuration)
     config.set('sentryIgnoreAngles', req.body.sentryIgnoreAngles)
@@ -57,6 +58,7 @@ module.exports = (req, res, next) => {
     dashcamQualityLowest: dashcamQuality === 'lowest',
     dashcamDuration: config.get('dashcamDuration'),
     sentry: config.get('sentry'),
+    sentryCinematic: config.get('sentryCinematic'),
     sentryQualityHighest: sentryQuality === 'highest',
     sentryQualityHigh: sentryQuality === 'high',
     sentryQualityMedium: sentryQuality === 'medium',

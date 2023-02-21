@@ -82,6 +82,10 @@
         <input class="form-check-input" id="sentry" name="sentry" type="checkbox" role="switch"{{#sentry}} checked{{/sentry}}>
         <label class="form-check-label" for="sentry"><a href="/archive">Create sentry clips</a></label>
       </div>
+      <div class="form-check form-switch mt-1">
+        <input class="form-check-input" id="sentryCinematic" name="sentryCinematic" type="checkbox" role="switch"{{#sentryCinematic}} checked{{/sentryCinematic}}>
+        <label class="form-check-label" for="sentryCinematic">Cinematic mode</label>
+      </div>
       <div class="form-floating mt-2">
         <select class="form-select" id="sentryQuality" name="sentryQuality">
           <option></option>

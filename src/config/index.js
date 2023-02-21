@@ -12,6 +12,7 @@ const settings = {
   dashcamQuality: 'medium',
   dashcamDuration: 45,
   sentry: true,
+  sentryCinematic: false,
   sentryQuality: 'high',
   sentryDuration: 30,
   sentryIgnoreAngles: [],
@@ -72,6 +73,7 @@ const set = (key, value) => {
 
     case 'dashcam':
     case 'sentry':
+    case 'sentryCinematic':
     case 'stream':
     case 'streamCopy':
       value = !!value
