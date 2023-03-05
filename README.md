@@ -1,11 +1,11 @@
 # TeslaBox
 Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
-A cinematic sentry mode (edits clips based on movement), see [here](https://twitter.com/mluggy/status/1628439817460584454) and [here.](https://twitter.com/mluggy/status/1627949202100690945). Also a live-view while you drive and an instant notification/archiving system.
+A cinematic sentry mode (edits clips based on movement), see [here](https://twitter.com/mluggy/status/1628439817460584454) and [here.](https://twitter.com/mluggy/status/1627949202100690945) Also a live-view while you drive and an instant notification/archiving system!
 
-The system alerts you immediately of each sentry/dashcam event (along with a copy of each clip), compresses and uploads to S3.
+The system alerts you immediately of each sentry/dashcam event (along with a copy of the clip), compresses and uploads to S3.
 
-TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/teslamate)
+TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
 
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
