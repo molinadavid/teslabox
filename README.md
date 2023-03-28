@@ -162,7 +162,9 @@ For paid (priority) support please contact teslabox@payymail.com
   tailscale up
   ```
 
-15. Download and install TeslaBox and packages:
+15. To avoid connectivity issues after running Teslabox for a long time, "Disable key expiry" on each device in your Tailscale network (thanks @genadyo)
+
+16. Download and install TeslaBox and packages:
    ```
    cd /root
    mkdir -p /root/teslabox
@@ -174,7 +176,7 @@ For paid (priority) support please contact teslabox@payymail.com
    npm install --production
    npm prune
    ```
-16. Finalize the TeslaBox service:
+17. Finalize the TeslaBox service:
   - First, create the service file:
   ```
   nano /lib/systemd/system/teslabox.service
