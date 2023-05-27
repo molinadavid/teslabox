@@ -25,7 +25,7 @@ const settings = {
   fontColor: 'white',
   borderColor: 'black',
   concurrent: 1,
-  maxRetries: 3,
+  maxRetries: Infinity,
   retryDelay: 10000,
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 }
@@ -114,17 +114,16 @@ exports.start = (cb) => {
         })
       }
     ], (err) => {
-      if (err) {
-        input.retries = (input.retries || 0) + 1
-        log.warn(`[queue/stream] ${input.id} failed (${input.retries} of ${settings.maxRetries} retries): ${err}`)
-      } else {
-        log.info(`[queue/stream] ${input.id} streamed after ${+new Date() - input.startedAt}ms`)
-      }
-
-      // clean up silently
-      if (!err || input.retries >= settings.maxRetries) {
+      if (!err || !input.steps.includes('copied')) {
         fs.rm(input.tempFile, () => {})
         fs.rm(input.file, () => {})
+
+        if (err) {
+          log.warn(`[queue/stream] ${input.id} failed: ${err}`)
+          q.cancel(input.id)
+        } else {
+          log.info(`[queue/stream] ${input.id} streamed after ${+new Date() - input.startedAt}ms`)
+        }
       }
 
       cb(err)

@@ -11,7 +11,7 @@ const Queue = require('better-queue')
 const settings = {
   appUrl: 'https://ownership.tesla.com/en_us/get-app',
   concurrent: 1,
-  maxRetries: 3,
+  maxRetries: Infinity,
   retryDelay: 10000
 }
 
@@ -115,9 +115,9 @@ exports.start = (cb) => {
         }
       }
     ], (err) => {
-      if (err) {
-        input.retries = (input.retries || 0) + 1
-        log.warn(`[queue/notify] ${input.id} failed (${input.retries} of ${settings.maxRetries} retries): ${err}`)
+      if (err && ping.isAlive()) {
+        log.warn(`[queue/notify] ${input.id} failed: ${err}`)
+        q.cancel(input.id)
       }
 
       cb(err)
