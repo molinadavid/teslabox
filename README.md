@@ -1,9 +1,11 @@
 # TeslaBox
 Lite, open-source version of [teslarpi.com](https://www.teslarpi.com).
 
-Compresses Tesla dashcam and sentry clips, uploads to S3, notifies of events via email (or Telegram, along with a copy of each clip) and allows remote streaming while parked or driving!
+A cinematic sentry mode (edits clips based on movement), see [here](https://twitter.com/mluggy/status/1628439817460584454) and [here.](https://twitter.com/mluggy/status/1627949202100690945) Also a live-view while you drive and an instant notification/archiving system!
 
-TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/teslamate)
+The system alerts you immediately of each sentry/dashcam event (along with a copy of the clip), compresses and uploads to S3.
+
+TeslaBox can also run [TeslaMate.](https://github.com/adriankumpf/teslamate)
 
 <img src="https://cdn.teslarpi.com/assets/img/teslabox.gif" width="150">
 
@@ -159,7 +161,9 @@ TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/tesl
   tailscale up
   ```
 
-15. Download and install TeslaBox and packages:
+15. To avoid connectivity issues after running Teslabox for a long time, "Disable key expiry" on each device in your Tailscale network (thanks @genadyo)
+
+16. Download and install TeslaBox and packages:
    ```
    cd /root
    mkdir -p /root/teslabox
@@ -171,7 +175,7 @@ TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/tesl
    npm install --production
    npm prune
    ```
-16. Finalize the TeslaBox service:
+17. Finalize the TeslaBox service:
   - First, create the service file:
   ```
   nano /lib/systemd/system/teslabox.service
