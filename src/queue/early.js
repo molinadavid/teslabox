@@ -20,7 +20,7 @@ const settings = {
   borderColor: 'black',
   signedExpirySeconds: 7 * 24 * 60 * 60,
   concurrent: 1,
-  maxRetries: 3,
+  maxRetries: Infinity,
   retryDelay: 10000,
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram')
 }
@@ -43,8 +43,8 @@ exports.start = (cb) => {
           return cb()
         }
 
-        const start = Math.max(input.event.timestamp - input.timestamp - Math.round(settings.duration * 0.4), 0)
-        const duration = Math.round(settings.duration * 0.6)
+        const start = Math.max(input.event.timestamp - input.timestamp - 2, 0)
+        const duration = Math.round(settings.duration)
         const timestamp = input.timestamp + start
         let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${start} -t ${duration} -i ${input.file} -filter_complex "[0]scale=15:15 [icon]; [1]fps=5,scale=640:480:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse,drawtext=fontfile='${settings.fontFile}':fontcolor=${settings.fontColor}:fontsize=12:borderw=1:bordercolor=${settings.borderColor}@1.0:x=22:y=465:text='TeslaBox ${input.carName.replace(/'/g, '\\')} ${_.upperFirst(input.event.type)}${input.event.type === 'sentry' ? ` (${_.upperFirst(input.event.angle)})` : ''} %{pts\\:localtime\\:${timestamp}}' [image]; [image][icon]overlay=5:462" -loop 0 ${input.outFile}`
 
@@ -117,21 +117,23 @@ exports.start = (cb) => {
         })
       }
     ], (err) => {
-      if (!err) {
-        log.info(`[queue/early] ${input.id} sent after ${+new Date() - input.startedAt}ms`)
-
-        queue.notify.push({
-          id: input.id,
-          event: input.event,
-          shortUrl: input.shortUrl,
-          videoUrl: input.videoUrl
-        })
-      }
-
-      // clean up silently
-      if (!err || input.retries >= settings.maxRetries) {
+      if (!err || !input.steps.includes('processed')) {
         fs.rm(input.file, () => {})
         fs.rm(input.outFile, () => {})
+
+        if (err) {
+          log.error(`[queue/early] ${input.id} failed: ${err}`)
+          q.cancel(input.id)
+        } else {
+          log.info(`[queue/early] ${input.id} sent after ${+new Date() - input.startedAt}ms`)
+
+          queue.notify.push({
+            id: input.id,
+            event: input.event,
+            shortUrl: input.shortUrl,
+            videoUrl: input.videoUrl
+          })
+        }
       }
 
       cb(err)
