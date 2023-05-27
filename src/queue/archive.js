@@ -27,7 +27,7 @@ const settings = {
   borderColor: 'black',
   signedExpirySeconds: 7 * 24 * 60 * 60,
   concurrent: 1,
-  maxRetries: 3,
+  maxRetries: Infinity,
   retryDelay: 10000,
   ramDir: process.env.NODE_ENV === 'production' ? '/mnt/ram' : path.join(__dirname, '../../mnt/ram'),
   cinematicFrames: 24,
@@ -135,18 +135,17 @@ exports.start = (cb) => {
               _.each(uniqueSeconds, (uniqueSecond) => {
                 const second = _.find(orderedSeconds, { second: uniqueSecond })
                 const nextSecond = _.find(orderedSeconds, { second: uniqueSecond + 1 }) || {}
-                start = start || second.second
+                start = typeof start === 'undefined' ? second.second : start
                 input.lastAngle = input.lastAngle || second.angle
 
                 if (input.lastAngle === second.angle || (!second.isEvent && (second.angle !== nextSecond.angle || duration < settings.cinematicDuration))) {
                   duration++
                 } else {
                   scenes.push({ angle: input.lastAngle, start, duration })
-                  start = second.second
+                  start = start + duration
                   input.lastAngle = second.angle
                   duration = 0
                 }
-
               })
 
               if (duration) {
@@ -180,7 +179,7 @@ exports.start = (cb) => {
               })
             })
           } else {
-            let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${front.start} -t ${front.duration} -i ${front.file} -ss ${right.start} -t ${right.duration} -i ${right.file} -ss ${back.start} -t ${back.duration} -i ${back.file} -ss ${left.start} -t ${left.duration} -i ${left.file} -filter_complex "[0]scale=25:25 [icon]; `
+            let command = `ffmpeg -y -hide_banner -loglevel error -i ${settings.iconFile} -ss ${front.start} -t ${front.duration} -i ${front.file} -ss ${front.start} -t ${front.duration} -i ${right.file} -ss ${front.start} -t ${front.duration} -i ${back.file} -ss ${front.start} -t ${front.duration} -i ${left.file} -t ${front.duration} -filter_complex "[0]scale=25:25 [icon]; `
 
             switch (input.event.angle) {
               case 'front':
@@ -319,33 +318,7 @@ exports.start = (cb) => {
         })
       }
     ], (err) => {
-      if (err) {
-        input.retries = (input.retries || 0) + 1
-        log.warn(`[queue/archive] ${input.id} failed (${input.retries} of ${settings.maxRetries} retries): ${err}`)
-      } else {
-        archives.push({
-          type: input.event.type,
-          created: input.event.timestamp * 1000,
-          processed: +new Date(),
-          lat: input.event.est_lat,
-          lon: input.event.est_lon,
-          url: input.videoUrl,
-          taken: +new Date() - input.startedAt
-        })
-
-        if (input.notifications.includes('fullVideo')) {
-          queue.notify.push({
-            id: input.id,
-            event: input.event,
-            videoUrl: input.videoUrl
-          })
-        }
-
-        log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startedAt}ms`)
-      }
-
-      // clean up silently
-      if (!err || input.retries >= settings.maxRetries) {
+      if (!err || !input.steps.includes('silenced')) {
         _.each(input.tempFiles, (file) => {
           fs.rm(file.file, () => {})
         })
@@ -364,6 +337,31 @@ exports.start = (cb) => {
 
         if (input.outFile) {
           fs.rm(input.outFile, () => {})
+        }
+
+        if (err) {
+          log.warn(`[queue/archive] ${input.id} failed: ${err}`)
+          q.cancel(input.id)
+        } else {
+          archives.push({
+            type: input.event.type,
+            created: input.event.timestamp * 1000,
+            processed: +new Date(),
+            lat: input.event.est_lat,
+            lon: input.event.est_lon,
+            url: input.videoUrl,
+            taken: +new Date() - input.startedAt
+          })
+
+          if (input.notifications.includes('fullVideo')) {
+            queue.notify.push({
+              id: input.id,
+              event: input.event,
+              videoUrl: input.videoUrl
+            })
+          }
+
+          log.info(`[queue/archive] ${input.id} archived after ${+new Date() - input.startedAt}ms`)
         }
       }
 
