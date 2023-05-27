@@ -10,7 +10,7 @@ const settings = {
   notifications: ['lowStorage', 'earlyWarningVideo'],
   dashcam: true,
   dashcamQuality: 'medium',
-  dashcamDuration: 45,
+  dashcamDuration: 30,
   sentry: true,
   sentryCinematic: false,
   sentryQuality: 'high',
