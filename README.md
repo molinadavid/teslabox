@@ -19,7 +19,6 @@ TeslaBox is also capable to run [TeslaMate.](https://github.com/adriankumpf/tesl
 - [Telegram account](https://telegram.org/)
 
 ## Installation
-For paid (priority) support please contact teslabox@payymail.com
 
 ### AWS (required for archiving)
 1. Sign into your AWS account
@@ -316,7 +315,7 @@ For paid (priority) support please contact teslabox@payymail.com
 - Notifications (notifications to send. Low storage to alert when the box has little to no space. Early warning to send an immediate text on each event (~10 seconds). Early warning video to send a short video on each event (~30 seconds). Full video to send the entire video (~10 minutes), with Telegram declining files > 20MB (Default: Low storage & Early warning video)
 - Create dashcam clips (uploads and notifies of dashcam/track events. Default: Enabled)
 - Quality (the higher you set this, the more space each clip would take. Default: Medium)
-- Duration (the longer you set this, the more time and space each clip would take. Default: 45)
+- Duration (the longer you set this, the more time and space each clip would take. Default: 30)
 - Create sentry clips (uploads and notifies of sentry events. Default: Enabled)
 - Cinematic mode (create a single, moving angle view based on simple motion detection. Default: Disabled)
 - Quality (the higher you set this, the more space each clip would take. Default: High)
@@ -353,7 +352,7 @@ Tesla would recognize the TeslaBox as standard USB. You can click save, honk or 
 
 If dashcam processing is enabled, clips will be uploaded to S3. If email and/or Telegram has been set up, you'll be notified there with a quick preview and a link to both the event location map and the full video.
 
-The clip would start 0.9X seconds prior to the event ("red dot") and 0.1X seconds following the event. X is settable under *Admin > Dashcam duration*.
+The clip would start X seconds prior to the event ("red dot") and up to 10 seconds following the event. X is settable under *Admin > Dashcam duration*.
 
 ### Sentry
 If sentry processing is enabled and sentry mode is activated in the car, then similarly to dashcam each event will be uploaded to S3 and notified.
@@ -402,4 +401,4 @@ TeslaBox is not affiliated or supported by Tesla. There is no official support w
 Please open an issue if things seems out of order and I'll attend them as time allows.
 
 ## Credits
-TeslaBox wouldn't be possible without the help of [teslausb](https://github.com/marcone/teslausb), [tesla_dashcam](https://github.com/ehendrix23/tesla_dashcam) and friends at [TeslaFansIL](https://t.me/TeslaFansIL).
+TeslaBox wouldn't be possible without the help of [teslausb](https://github.com/marcone/teslausb), [tesla_dashcam](https://github.com/ehendrix23/tesla_dashcam) and friends at [S3XYIL](https://t.me/S3XYIL).
