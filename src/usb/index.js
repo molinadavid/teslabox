@@ -166,8 +166,8 @@ exports.start = (cb) => {
                     }
 
                     const archiveDuration = event.type === 'sentry' ? sentryDuration : dashcamDuration
-                    const startEventTimestamp = event.timestamp - Math.round(archiveDuration * (event.type === 'sentry' ? 0.4 : 0.9))
-                    const endEventTimestamp = event.timestamp + Math.round(archiveDuration * (event.type === 'sentry' ? 0.6 : 0.1))
+                    const startEventTimestamp = event.timestamp - (event.type === 'sentry' ? Math.round(archiveDuration * 0.4) : archiveDuration)
+                    const endEventTimestamp = event.timestamp + (event.type === 'sentry' ? Math.round(archiveDuration * 0.6) : 10)
 
                     const tempFiles = []
 
@@ -222,11 +222,11 @@ exports.start = (cb) => {
                             }
                           },
                           (cb) => {
-                            if (timestamp + fileDuration > startEventTimestamp && timestamp < endEventTimestamp) {
+                            if (timestamp + fileDuration > startEventTimestamp && timestamp <= endEventTimestamp) {
                               copyTemp(videoFile, (err, tempFile) => {
                                 if (!err) {
                                   const start = timestamp > startEventTimestamp ? 0 : startEventTimestamp - timestamp
-                                  const duration = timestamp + fileDuration > endEventTimestamp ? endEventTimestamp - timestamp - start : fileDuration
+                                  const duration = timestamp + fileDuration > endEventTimestamp ? endEventTimestamp - timestamp : fileDuration - start
 
                                   tempFiles.push({
                                     file: tempFile,
