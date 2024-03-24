@@ -2,6 +2,7 @@ const config = require("../config");
 const log = require("../log");
 const ping = require("../ping");
 const aws = require("../aws");
+const dropbox = require("../dropbox");
 const queue = require("../queue");
 const archiveData = require("./archiveData");
 const _ = require("lodash");
@@ -405,21 +406,48 @@ exports.start = (cb) => {
             return cb(err);
           }
 
-          fs.readFile(input.outFile, (err, fileContents) => {
-            if (err) {
-              return cb(err);
+          log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`);
+          console.log(`[queue/archive] ${input.id} uploading: ${input.outKey}`);
+          dropbox.dropbox.putObject(input.outFile, input.outKey, (err) => {
+            if (!err) {
+              input.steps.push("uploaded");
+              fs.rm(input.outFile, () => {});
             }
 
-            log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`);
-            aws.s3.putObject(input.outKey, fileContents, (err) => {
-              if (!err) {
-                input.steps.push("uploaded");
-                fs.rm(input.outFile, () => {});
-              }
-
-              cb(err);
-            });
+            cb(err);
           });
+          // fs.readFile(input.outFile, (err, fileContents) => {
+          //   if (err) {
+          //     return cb(err);
+          //   }
+
+          //   log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`);
+          //   dropbox.dropbox.putObject(input.outKey, fileContents, (err) => {
+          //     if (!err) {
+          //       input.steps.push("uploaded");
+          //       fs.rm(input.outFile, () => {});
+          //     }
+
+          //     cb(err);
+          //   });
+          // });
+
+          // fs.readFile(input.outFile, (err, fileContents) => {
+          //   console.log('>>>>> S3', err);
+          //   if (err) {
+          //     return cb(err);
+          //   }
+
+          //   log.debug(`[queue/archive] ${input.id} uploading: ${input.outKey}`);
+          //   aws.s3.putObject(input.outKey, fileContents, (err) => {
+          //     if (!err) {
+          //       input.steps.push("uploaded");
+          //       fs.rm(input.outFile, () => {});
+          //     }
+
+          //     cb(err);
+          //   });
+          // });
         },
         (cb) => {
           if (input.steps.includes("signed")) {

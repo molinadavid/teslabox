@@ -3,6 +3,7 @@ require('dotenv').config()
 const config = require('./config')
 const log = require('./log')
 const aws = require('./aws')
+const dropbox = require('./dropbox')
 const telegram = require('./telegram')
 const http = require('./http')
 const ping = require('./ping')
@@ -15,6 +16,7 @@ async.series([
   config.start,
   log.start,
   aws.start,
+  dropbox.start,
   telegram.start,
   http.start,
   ping.start,
